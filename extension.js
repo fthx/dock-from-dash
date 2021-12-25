@@ -8,11 +8,7 @@
 	License GPL v3
 */
 
-//const { Clutter, GLib, GObject, St } = imports.gi;
-const { Clutter, GLib, GObject,
-	Graphene, Meta, Shell, St } = imports.gi;
-
-
+const { Clutter, GLib, GObject, St } = imports.gi;
 
 const Main = imports.ui.main;
 const Dash = imports.ui.dash;
@@ -145,6 +141,7 @@ class Extension {
 		if (this.hide_dock_timeout) {GLib.source_remove(this.hide_dock_timeout);}
 		if (this._workareas_changed) {global.display.disconnect(this._workareas_changed);}
 		if (this._overview_showing) {Main.overview.disconnect(this._overview_showing);}
+		
 		Main.layoutManager.removeChrome(this.screen_border_box);
 		Main.layoutManager.removeChrome(this.dock);
 		this.screen_border_box.destroy();
