@@ -48,7 +48,9 @@ class Dock extends Dash.Dash {
 
 class Extension {
     constructor() {
-        if (Main.layoutManager.startInOverview) {Main.layoutManager.startInOverview = false;}
+        if (Main.layoutManager.startInOverview) {
+            Main.layoutManager.startInOverview = false;
+        }
     }
 
     _dock_refresh() {
@@ -153,11 +155,21 @@ class Extension {
     }
 
     disable() {
-        if (this.show_dock_timeout) {GLib.source_remove(this.show_dock_timeout);}
-        if (this.hide_dock_timeout) {GLib.source_remove(this.hide_dock_timeout);}
-        if (this.workareas_changed) {global.display.disconnect(this.workareas_changed);}
-        if (this.main_session_mode_updated) {Main.sessionMode.disconnect(this.main_session_mode_updated);}
-        if (this.overview_showing) {Main.overview.disconnect(this.overview_showing);}
+        if (this.show_dock_timeout) {
+            GLib.source_remove(this.show_dock_timeout);
+        }
+        if (this.hide_dock_timeout) {
+            GLib.source_remove(this.hide_dock_timeout);
+        }
+        if (this.workareas_changed) {
+            global.display.disconnect(this.workareas_changed);
+        }
+        if (this.main_session_mode_updated) {
+            Main.sessionMode.disconnect(this.main_session_mode_updated);
+        }
+        if (this.overview_showing) {
+            Main.overview.disconnect(this.overview_showing);
+        }
         Main.layoutManager.removeChrome(this.screen_border_box);
         Main.layoutManager.removeChrome(this.dock);
         this.screen_border_box.destroy();
