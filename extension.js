@@ -39,8 +39,8 @@ class Dock extends Dash.Dash {
         super._init();
         Main.layoutManager.addTopChrome(this);
         this.showAppsButton.set_toggle_mode(false);
-        this.set_track_hover(true);
-        this.set_reactive(true);
+        this._dashContainer.set_track_hover(true);
+        this._dashContainer.set_reactive(true);
         this.set_opacity(Math.round(DASH_OPACITY_RATIO * 255));
         this.show();
     }
@@ -81,9 +81,9 @@ class Extension {
     }
 
     _on_dock_hover() {
-        if (this.dock.is_visible() && !this.dock.get_hover()) {
+        if (this.dock.is_visible() && !this.dock._dashContainer.get_hover()) {
             this.hide_dock_timeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, HIDE_DOCK_DELAY, () => {
-                if (!this.dock.get_hover() && !this.screen_border_box.get_hover()) {
+                if (!this.dock._dashContainer.get_hover() && !this.screen_border_box.get_hover()) {
                     this._hide_dock();
                 }
                 this.hide_dock_timeout = null;
@@ -145,7 +145,7 @@ class Extension {
     enable() {
         this._create_dock();
         this.dock.showAppsButton.connect('button-release-event', this._show_apps.bind(this));
-        this.dock_hover = this.dock.connect('notify::hover', this._on_dock_hover.bind(this));
+        this.dock_hover = this.dock._dashContainer.connect('notify::hover', this._on_dock_hover.bind(this));
         this.screen_border_box_hover = this.screen_border_box.connect('notify::hover', this._on_screen_border_box_hover.bind(this));
         this.workareas_changed = global.display.connect('workareas-changed', this._dock_refresh.bind(this));
         this.main_session_mode_updated = Main.sessionMode.connect('updated', this._dock_refresh.bind(this));
