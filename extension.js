@@ -135,10 +135,10 @@ class Extension {
 		this.screen_border_box_hover = this.screen_border_box.connect('notify::hover', this._on_screen_border_box_hover.bind(this));
 		this.workareas_changed = global.display.connect('workareas-changed', this._dock_refresh.bind(this));
 		this.main_session_mode_updated = Main.sessionMode.connect('updated', this._dock_refresh.bind(this));
-        this.overview_showing = Main.overview.connect('showing', this._hide_dock.bind(this));
+		this.overview_showing = Main.overview.connect('showing', this._hide_dock.bind(this));
 	}
 
-    disable() {
+	disable() {
 		if (this.show_dock_timeout) {GLib.source_remove(this.show_dock_timeout);}
 		if (this.hide_dock_timeout) {GLib.source_remove(this.hide_dock_timeout);}
 		if (this.workareas_changed) {global.display.disconnect(this.workareas_changed);}
@@ -148,7 +148,7 @@ class Extension {
 		Main.layoutManager.removeChrome(this.dock);
 		this.screen_border_box.destroy();
 		this.dock.destroy();
-    }
+		}
 }
 
 function init() {
