@@ -15,10 +15,10 @@ const Dash = imports.ui.dash;
 
 var DASH_MAX_HEIGHT_RATIO = 0.15;
 var DASH_OPACITY_RATIO = 0.9;
-var SHOW_DOCK_BOX_HEIGHT = 3;
+var SHOW_DOCK_BOX_HEIGHT = 1;
 var SHOW_DOCK_DURATION = 200;
 var HIDE_DOCK_DURATION = 200;
-var SHOW_DOCK_DELAY = 120;
+var SHOW_DOCK_DELAY = 160;
 var HIDE_DOCK_DELAY = 400;
 
 
@@ -52,24 +52,24 @@ class Extension {
     }
 
     _dock_refresh() {
-        if (!this.dock_refreshing) {
-            this.dock_refreshing = true;
-            this.work_area = Main.layoutManager.getWorkAreaForMonitor(Main.layoutManager.primaryIndex);
-            if (!this.work_area) {
-                return;
-            }
-            this.max_dock_height = Math.round(this.work_area.height * DASH_MAX_HEIGHT_RATIO);
-            this.dock.set_width(this.work_area.width);
-            this.dock.set_height(Math.min(this.dock.get_preferred_height(this.work_area.width), this.max_dock_height));
-            this.dock.setMaxSize(this.work_area.width, this.max_dock_height);
-            this.dock_x_offset = Math.round((this.work_area.width - this.dock.width) / 2);
-            this.dock.set_position(this.work_area.x + this.dock_x_offset, this.work_area.y + this.work_area.height);
-            this.screen_border_box.set_size(this.work_area.width, SHOW_DOCK_BOX_HEIGHT);
-            this.screen_border_box.set_position(this.work_area.x, this.work_area.y + this.work_area.height - SHOW_DOCK_BOX_HEIGHT);
-            this.dock.show();
-            this._hide_dock();
-            this.dock_refreshing = false;
+        if (this.dock_refreshing) {
+            return;
         }
+        this.dock_refreshing = true;
+        this.work_area = Main.layoutManager.getWorkAreaForMonitor(Main.layoutManager.primaryIndex);
+        if (!this.work_area) {
+            return;
+        }
+        this.max_dock_height = Math.round(this.work_area.height * DASH_MAX_HEIGHT_RATIO);
+        this.dock.set_width(this.work_area.width);
+        this.dock.set_height(Math.min(this.dock.get_preferred_height(this.work_area.width), this.max_dock_height));
+        this.dock.setMaxSize(this.work_area.width, this.max_dock_height);
+        this.dock.set_position(this.work_area.x, this.work_area.y + this.work_area.height);
+        this.screen_border_box.set_size(this.work_area.width, SHOW_DOCK_BOX_HEIGHT);
+        this.screen_border_box.set_position(this.work_area.x, this.work_area.y + this.work_area.height - SHOW_DOCK_BOX_HEIGHT);
+        this.dock.show();
+        this._hide_dock();
+        this.dock_refreshing = false;
     }
 
     _show_apps() {
