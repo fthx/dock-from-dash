@@ -111,6 +111,7 @@ class Extension {
 	_create_dock() {
 		this.dock = new Dock();
 		this._dock_refresh();
+		this._show_dock();
 	}
 
 	enable() {
