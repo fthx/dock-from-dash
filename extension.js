@@ -15,11 +15,12 @@ const Dash = imports.ui.dash;
 
 var DASH_MAX_HEIGHT_RATIO = 0.15;
 var DASH_OPACITY_RATIO = 0.9;
-var SHOW_DOCK_BOX_HEIGHT = 1;
+var SHOW_DOCK_BOX_HEIGHT = 2;
 var SHOW_DOCK_DURATION = 200;
 var HIDE_DOCK_DURATION = 200;
-var SHOW_DOCK_DELAY = 160;
-var HIDE_DOCK_DELAY = 400;
+var SHOW_DOCK_DELAY = 200;
+var HIDE_DOCK_DELAY = 500;
+var AUTO_HIDE_DOCK_DELAY = 500;
 
 
 var ScreenBorderBox = GObject.registerClass(
@@ -39,6 +40,8 @@ class Dock extends Dash.Dash {
         super._init();
         Main.layoutManager.addTopChrome(this);
         this.showAppsButton.set_toggle_mode(false);
+        this.set_track_hover(true);
+        this.set_reactive(true);
         this._dashContainer.set_track_hover(true);
         this._dashContainer.set_reactive(true);
         this.set_opacity(Math.round(DASH_OPACITY_RATIO * 255));
@@ -104,10 +107,18 @@ class Extension {
                 });
             }
         }
+        if (!Main.overview.visible && !Main.sessionMode.isLocked) {
+            this.auto_hide_dock_timeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, AUTO_HIDE_DOCK_DELAY, () => {
+                if (!this.dock.get_hover() && !this.screen_border_box.get_hover()) {
+                    this._hide_dock();
+                }
+                this.auto_hide_dock_timeout = null;
+            });
+        }
     }
 
     _hide_dock() {
-        if (this.dock_animated) {
+        if (this.dock_animated || !this.dock.is_visible()) {
             return;
         }
         this.dock_animated = true;
@@ -123,7 +134,7 @@ class Extension {
     }
 
     _show_dock() {
-        if (this.dock_animated) {
+        if (this.dock_animated || this.dock.is_visible()) {
             return;
         }
         this.dock.show();
@@ -160,6 +171,9 @@ class Extension {
         }
         if (this.hide_dock_timeout) {
             GLib.source_remove(this.hide_dock_timeout);
+        }
+        if (this.auto_hide_dock_timeout) {
+            GLib.source_remove(this.auto_hide_dock_timeout);
         }
         if (this.workareas_changed) {
             global.display.disconnect(this.workareas_changed);
