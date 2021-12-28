@@ -178,6 +178,9 @@ class Extension {
         if (this.workareas_changed) {
             global.display.disconnect(this.workareas_changed);
         }
+        this.show_dock_timeout = null;
+        this.hide_dock_timeout = null;
+        this.auto_hide_dock_timeout = null;
         if (this.main_session_mode_updated) {
             Main.sessionMode.disconnect(this.main_session_mode_updated);
         }
