@@ -109,7 +109,7 @@ class Extension {
         }
         if (!Main.overview.visible && !Main.sessionMode.isLocked) {
             this.auto_hide_dock_timeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, AUTO_HIDE_DOCK_DELAY, () => {
-                if (!this.dock.get_hover() && !this.screen_border_box.get_hover()) {
+                if (!this.dock._dashContainer.get_hover() && !this.screen_border_box.get_hover()) {
                     this._hide_dock();
                 }
                 this.auto_hide_dock_timeout = null;
