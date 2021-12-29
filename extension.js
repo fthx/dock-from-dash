@@ -2,9 +2,7 @@
     Dock from Dash - GNOME Shell 40+ extension
     Copyright Francois Thirioux 2021, 2022
     GitHub contributors: @fthx
-    Some ideas picked from GNOME Shell native code:
-    https://gitlab.gnome.org/GNOME/gnome-shell/-/blob/main/js/ui/dash.js
-    https://gitlab.gnome.org/GNOME/gnome-shell/-/blob/main/js/ui/overviewControls.js
+    Some ideas picked from GNOME Shell native code
     License GPL v3
 */
 
@@ -78,11 +76,7 @@ class Extension {
     }
 
     _show_apps() {
-        if (Main.overview.visible) {
-            Main.overview.hide();
-        } else {
-            Main.overview.showApps();
-        }
+        Main.overview.showApps();
     }
 
     _on_dock_hover() {
