@@ -75,10 +75,6 @@ class Extension {
         this.dock_refreshing = false;
     }
 
-    _show_apps() {
-        Main.overview.showApps();
-    }
-
     _on_dock_hover() {
         if (this.dock.is_visible() && !this.dock._dashContainer.get_hover()) {
             this.hide_dock_timeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, HIDE_DOCK_DELAY, () => {
@@ -151,10 +147,11 @@ class Extension {
 
     enable() {
         this._create_dock();
-        this.dock.showAppsButton.connect('button-release-event', this._show_apps.bind(this));
+        this.dock.showAppsButton.connect('button-release-event', () => Main.overview.showApps());
         this.dock_hover = this.dock._dashContainer.connect('notify::hover', this._on_dock_hover.bind(this));
         this.screen_border_box_hover = this.screen_border_box.connect('notify::hover', this._on_screen_border_box_hover.bind(this));
         this.workareas_changed = global.display.connect('workareas-changed', this._dock_refresh.bind(this));
+        this.restacked = global.display.connect('restacked', this._hide_dock.bind(this));
         this.main_session_mode_updated = Main.sessionMode.connect('updated', this._dock_refresh.bind(this));
         this.overview_showing = Main.overview.connect('showing', this._hide_dock.bind(this));
     }
@@ -171,6 +168,9 @@ class Extension {
         }
         if (this.workareas_changed) {
             global.display.disconnect(this.workareas_changed);
+        }
+        if (this.restacked) {
+            global.display.disconnect(this.restacked);
         }
         this.show_dock_timeout = null;
         this.hide_dock_timeout = null;
