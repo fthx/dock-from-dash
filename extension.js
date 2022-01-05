@@ -6,10 +6,11 @@
     License GPL v3
 */
 
-const { Clutter, GLib, GObject, St } = imports.gi;
+const { Clutter, GLib, GObject, Shell, St } = imports.gi;
 
 const Main = imports.ui.main;
 const Dash = imports.ui.dash;
+const AppDisplay = imports.ui.appDisplay;
 
 var DASH_MAX_HEIGHT_RATIO = 0.15;
 var DASH_OPACITY_RATIO = 0.9;
@@ -51,6 +52,42 @@ class Extension {
     constructor() {
         if (Main.layoutManager.startInOverview) {
             Main.layoutManager.startInOverview = false;
+        }
+    }
+
+    _modify_native_click_behavior() {
+        this.original_click_function = AppDisplay.AppIcon.prototype.activate;
+        AppDisplay.AppIcon.prototype.activate = function(button) {
+            let event = Clutter.get_current_event();
+            let modifiers = event ? event.get_state() : 0;
+            let isMiddleButton = button && button == Clutter.BUTTON_MIDDLE;
+            let isCtrlPressed = (modifiers & Clutter.ModifierType.CONTROL_MASK) != 0;
+            let openNewWindow = this.app.can_open_new_window() && this.app.state == Shell.AppState.RUNNING && (isCtrlPressed || isMiddleButton);
+            if (this.app.state == Shell.AppState.STOPPED || openNewWindow) {
+                this.animateLaunch();
+            }
+            if (openNewWindow) {
+                this.app.open_new_window(-1);
+                Main.overview.hide();
+            } else {
+                if (this.app.state == Shell.AppState.RUNNING) {
+                    if (this.app.get_n_windows() == 1) {
+                        if (this.app.get_windows()[0].has_focus() && this.app.get_windows()[0].can_minimize()) {
+                            this.app.get_windows()[0].minimize();
+                            Main.overview.hide();
+                        }
+                        if (!this.app.get_windows()[0].has_focus()) {
+                            this.app.get_windows()[0].activate(global.get_current_time());
+                            Main.overview.hide();
+                        }
+                    } else {
+                        Main.overview.show();
+                    }
+                } else {
+                    this.app.activate();
+                    Main.overview.hide();
+                }
+            }
         }
     }
 
@@ -146,6 +183,7 @@ class Extension {
     }
 
     enable() {
+        this._modify_native_click_behavior();
         this._create_dock();
         this.dock.showAppsButton.connect('button-release-event', () => Main.overview.showApps());
         this.dock_hover = this.dock._dashContainer.connect('notify::hover', this._on_dock_hover.bind(this));
@@ -157,6 +195,7 @@ class Extension {
     }
 
     disable() {
+        AppDisplay.AppIcon.prototype.activate = this.original_click_function;
         if (this.show_dock_timeout) {
             GLib.source_remove(this.show_dock_timeout);
         }
