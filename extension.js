@@ -144,6 +144,22 @@ class Extension {
         }
     }
 
+    _on_overview_hide_dock() {
+        if (this.dock_animated || !this.dock.is_visible()) {
+            return;
+        }
+        this.dock_animated = true;
+        this.dock.hide();
+        this.dock.ease({
+            duration: 0,
+            translation_y: this.dock.height,
+            mode: Clutter.AnimationMode.EASE_OUT_QUAD,
+            onComplete: () => {
+                this.dock_animated = false;
+            },
+        });
+    }
+
     _hide_dock() {
         if (this.dock_animated || !this.dock.is_visible()) {
             return;
@@ -191,6 +207,7 @@ class Extension {
         this.workareas_changed = global.display.connect('workareas-changed', this._dock_refresh.bind(this));
         this.restacked = global.display.connect('restacked', this._hide_dock.bind(this));
         this.main_session_mode_updated = Main.sessionMode.connect('updated', this._dock_refresh.bind(this));
+        this.overview_shown = Main.overview.connect('shown', this._on_overview_hide_dock.bind(this));
     }
 
     disable() {
@@ -216,8 +233,8 @@ class Extension {
         if (this.main_session_mode_updated) {
             Main.sessionMode.disconnect(this.main_session_mode_updated);
         }
-        if (this.overview_showing) {
-            Main.overview.disconnect(this.overview_showing);
+        if (this.overview_shown) {
+            Main.overview.disconnect(this.overview_shown);
         }
         Main.layoutManager.removeChrome(this.screen_border_box);
         Main.layoutManager.removeChrome(this.dock);
