@@ -191,7 +191,6 @@ class Extension {
         this.workareas_changed = global.display.connect('workareas-changed', this._dock_refresh.bind(this));
         this.restacked = global.display.connect('restacked', this._hide_dock.bind(this));
         this.main_session_mode_updated = Main.sessionMode.connect('updated', this._dock_refresh.bind(this));
-        this.overview_showing = Main.overview.connect('showing', this._hide_dock.bind(this));
     }
 
     disable() {
