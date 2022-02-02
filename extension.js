@@ -15,11 +15,11 @@ const AppDisplay = imports.ui.appDisplay;
 var DASH_MAX_HEIGHT_RATIO = 0.15;
 var DASH_OPACITY_RATIO = 0.9;
 var SHOW_DOCK_BOX_HEIGHT = 2;
-var SHOW_DOCK_DURATION = 200;
+var SHOW_DOCK_DURATION = 100;
 var HIDE_DOCK_DURATION = 200;
-var SHOW_DOCK_DELAY = 200;
-var HIDE_DOCK_DELAY = 500;
-var AUTO_HIDE_DOCK_DELAY = 500;
+var SHOW_DOCK_DELAY = 100;
+var HIDE_DOCK_DELAY = 300;
+var AUTO_HIDE_DOCK_DELAY = 300;
 
 
 var ScreenBorderBox = GObject.registerClass(
@@ -50,9 +50,6 @@ class Dock extends Dash.Dash {
 
 class Extension {
     constructor() {
-        if (Main.layoutManager.startInOverview) {
-            Main.layoutManager.startInOverview = false;
-        }
     }
 
     _modify_native_click_behavior() {
