@@ -121,6 +121,16 @@ class Extension {
     }
 
     _on_screen_border_box_hover() {
+        let [pointerX, pointerY] = global.get_pointer();
+    	let halfscreen = Main.layoutManager.getWorkAreaForMonitor(0).width/2;
+        
+        if(pointerX > (halfscreen + this.dock._box.width/2 + 10)){
+            return;
+        }        
+        else if(pointerX < (halfscreen - this.dock._box.width/2 - 10)){
+            return;
+        }
+        
         if (!this.dock.is_visible() && !Main.overview.visible && !Main.sessionMode.isLocked) {
             if (!global.display.get_focus_window() || !global.display.get_focus_window().is_fullscreen()) {
                 this.show_dock_timeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, SHOW_DOCK_DELAY, () => {
