@@ -67,8 +67,12 @@ class Extension {
                 this.app.open_new_window(-1);
                 Main.overview.hide();
             } else {
-                if (this.app.state == Shell.AppState.RUNNING) {
-                    if (this.app.get_n_windows() == 1) {
+                switch (this.app.get_n_windows()) {
+                    case 0:
+                        this.app.activate();
+                        Main.overview.hide();
+                    break;
+                    case 1:
                         if (this.app.get_windows()[0].has_focus() && this.app.get_windows()[0].can_minimize()) {
                             this.app.get_windows()[0].minimize();
                             Main.overview.hide();
@@ -77,13 +81,10 @@ class Extension {
                             this.app.get_windows()[0].activate(global.get_current_time());
                             Main.overview.hide();
                         }
-                    } else {
+                    break;
+                    default:
                         Main.overview.show();
-                    }
-                } else {
-                    this.app.activate();
-                    Main.overview.hide();
-                }
+                }               
             }
         }
     }
