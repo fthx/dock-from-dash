@@ -102,11 +102,19 @@ class Extension {
         this.dock.set_height(Math.min(this.dock.get_preferred_height(this.work_area.width), this.max_dock_height));
         this.dock.setMaxSize(this.work_area.width, this.max_dock_height);
         this.dock.set_position(this.work_area.x, this.work_area.y + this.work_area.height);
-        this.screen_border_box.set_size(this.work_area.width, SHOW_DOCK_BOX_HEIGHT);
-        this.screen_border_box.set_position(this.work_area.x, this.work_area.y + this.work_area.height - SHOW_DOCK_BOX_HEIGHT);
         this.dock.show();
         this._hide_dock();
+        this.refresh_screen_border_box_timeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 1000, () => {
+            this._screen_border_box_refresh();
+        });
         this.dock_refreshing = false;
+    }
+
+    _screen_border_box_refresh() {
+        this.screen_border_box.set_size(this.dock._dashContainer.width, SHOW_DOCK_BOX_HEIGHT);
+        this.screen_border_box_x = this.work_area.x + Math.round((this.work_area.width - this.dock._dashContainer.width) / 2);
+        this.screen_border_box_y = this.work_area.y + this.work_area.height - SHOW_DOCK_BOX_HEIGHT;
+        this.screen_border_box.set_position(this.screen_border_box_x, this.screen_border_box_y);
     }
 
     _on_dock_hover() {
@@ -209,6 +217,9 @@ class Extension {
 
     disable() {
         AppDisplay.AppIcon.prototype.activate = this.original_click_function;
+        if (this.refresh_screen_border_box_timeout) {
+            GLib.source_remove(this.refresh_screen_border_box_timeout);
+        }
         if (this.show_dock_timeout) {
             GLib.source_remove(this.show_dock_timeout);
         }
