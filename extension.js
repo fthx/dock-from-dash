@@ -20,6 +20,7 @@ var SHOW_DOCK_DURATION = 100;
 var HIDE_DOCK_DURATION = 200;
 var TOGGLE_DOCK_HOVER_DELAY = 150;
 var DOCK_AUTOHIDE_DURATION = 1500;
+var SHOW_IN_FULLSCREEN = false;
 
 
 var ScreenBorderBox = GObject.registerClass(
@@ -128,7 +129,7 @@ class Extension {
         
         if (!Main.overview.visible && !Main.sessionMode.isLocked) {
             this.toggle_dock_hover_timeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, TOGGLE_DOCK_HOVER_DELAY, () => {
-                if (!global.display.get_focus_window() || !global.display.get_focus_window().is_fullscreen()) {
+                if (SHOW_IN_FULLSCREEN || !global.display.get_focus_window() || !global.display.get_focus_window().is_fullscreen()) {
                     if (this.screen_border_box.get_hover()) {
                         this._show_dock();
                     }
