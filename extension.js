@@ -218,8 +218,10 @@ class Extension {
     enable() {
         this._modify_native_click_behavior();
         this._create_dock();
-        Main.overview.show();
-        
+        Main.layoutManager.connect('startup-complete', () => {
+            Main.overview.hide();
+        });
+
         this.dock.showAppsButton.connect('button-release-event', () => Main.overview.showApps());
         this.screen_border_box_hover = this.screen_border_box.connect('notify::hover', this._on_screen_border_box_hover.bind(this));
         this.dock_hover = this.dock._dashContainer.connect('notify::hover', this._on_dock_hover.bind(this));
