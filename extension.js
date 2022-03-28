@@ -11,9 +11,6 @@ const { Clutter, GLib, GObject, Shell, St } = imports.gi;
 const Main = imports.ui.main;
 const Dash = imports.ui.dash;
 const AppDisplay = imports.ui.appDisplay;
-const Config = imports.misc.config;
-
-var GNOME_SHELL_VERSION = parseFloat(Config.PACKAGE_VERSION);
 
 var DASH_MAX_HEIGHT_RATIO = 0.15;
 var DASH_OPACITY_RATIO = 1;
@@ -104,11 +101,7 @@ class Extension {
         }
 
         this.max_dock_height = Math.round(this.work_area.height * DASH_MAX_HEIGHT_RATIO);
-        if (GNOME_SHELL_VERSION < 42) {
-            this.dock.set_width(this.work_area.width);
-        } else {
-            this.dock.set_width(this.work_area.width - 48);
-        }
+        this.dock.set_width(this.work_area.width);
         this.dock.set_height(Math.min(this.dock.get_preferred_height(this.work_area.width), this.max_dock_height));
         this.dock.setMaxSize(this.dock.width, this.max_dock_height);
         this.dock.set_position(this.work_area.x, this.work_area.y + this.work_area.height);
