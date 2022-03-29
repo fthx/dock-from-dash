@@ -1,16 +1,17 @@
 /*
     Dock from Dash - GNOME Shell 40+ extension
     Copyright Francois Thirioux
-    GitHub contributors: @fthx
+    GitHub contributors: @fthx, @rastersoft
     Some ideas picked from GNOME Shell native code
     License GPL v3
 */
 
-const { Clutter, GLib, GObject, Shell, St, Meta } = imports.gi;
+const { Clutter, GLib, GObject, Meta, Shell, St } = imports.gi;
 
 const Main = imports.ui.main;
 const Dash = imports.ui.dash;
 const AppDisplay = imports.ui.appDisplay;
+const WorkspaceManager = global.workspace_manager;
 
 var DASH_MAX_HEIGHT_RATIO = 0.15;
 var DASH_OPACITY_RATIO = 1;
@@ -150,6 +151,20 @@ class Extension {
         }
     }
 
+    _on_dock_scroll(origin, event) {
+        this.active_workspace = WorkspaceManager.get_active_workspace();
+        switch(event.get_scroll_direction()) {
+            case Clutter.ScrollDirection.DOWN:
+            case Clutter.ScrollDirection.RIGHT:
+                this.active_workspace.get_neighbor(Meta.MotionDirection.RIGHT).activate(event.get_time());
+                break;
+            case Clutter.ScrollDirection.UP:
+            case Clutter.ScrollDirection.LEFT:
+                this.active_workspace.get_neighbor(Meta.MotionDirection.LEFT).activate(event.get_time());
+                break;
+        }
+    }
+
     _on_overview_shown() {
         if (this.dock_animated || !this.dock.is_visible()) {
             return;
@@ -203,25 +218,12 @@ class Extension {
 
     _create_dock() {
         this.dock = new Dock();
-        this.dock._dashContainer.connect('scroll-event', this._manageDockScroll.bind(this));
         this.screen_border_box = new ScreenBorderBox();
-        this.screen_border_box.connect('scroll-event', this._manageDockScroll.bind(this));
         this._dock_refresh();
-    }
-
-    _manageDockScroll(origin, event) {
-        let currentWorkspace = global.workspace_manager.get_active_workspace();
-        let direction = event.get_scroll_direction();
-        switch(direction) {
-        case Clutter.ScrollDirection.DOWN:
-        case Clutter.ScrollDirection.RIGHT:
-            currentWorkspace.get_neighbor(Meta.MotionDirection.RIGHT).activate(event.get_time());
-            break;
-        case Clutter.ScrollDirection.UP:
-        case Clutter.ScrollDirection.LEFT:
-            currentWorkspace.get_neighbor(Meta.MotionDirection.LEFT).activate(event.get_time());
-            break;
-        }
+        this.screen_border_box.connect('notify::hover', this._on_screen_border_box_hover.bind(this));
+        this.dock._dashContainer.connect('notify::hover', this._on_dock_hover.bind(this));
+        this.screen_border_box.connect('scroll-event', this._on_dock_scroll.bind(this));
+        this.dock._dashContainer.connect('scroll-event', this._on_dock_scroll.bind(this));
     }
 
     enable() {
@@ -232,8 +234,6 @@ class Extension {
         });
 
         this.dock.showAppsButton.connect('button-release-event', () => Main.overview.showApps());
-        this.screen_border_box_hover = this.screen_border_box.connect('notify::hover', this._on_screen_border_box_hover.bind(this));
-        this.dock_hover = this.dock._dashContainer.connect('notify::hover', this._on_dock_hover.bind(this));
         this.workareas_changed = global.display.connect('workareas-changed', this._dock_refresh.bind(this));
         this.overview_shown = Main.overview.connect('shown', this._on_overview_shown.bind(this));
     }
