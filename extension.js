@@ -6,7 +6,7 @@
     License GPL v3
 */
 
-const { Clutter, GLib, GObject, Shell, St } = imports.gi;
+const { Clutter, GLib, GObject, Shell, St, Meta } = imports.gi;
 
 const Main = imports.ui.main;
 const Dash = imports.ui.dash;
@@ -84,7 +84,7 @@ class Extension {
                     break;
                     default:
                         Main.overview.show();
-                }               
+                }
             }
         }
     }
@@ -94,7 +94,7 @@ class Extension {
             return;
         }
         this.dock_refreshing = true;
-        
+
         this.work_area = Main.layoutManager.getWorkAreaForMonitor(Main.layoutManager.primaryIndex);
         if (!this.work_area) {
             return;
@@ -108,7 +108,7 @@ class Extension {
 
         this.dock.show();
         this._hide_dock();
-        
+
         this.refresh_screen_border_box_timeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 1000, () => {
             this._screen_border_box_refresh();
             this.refresh_screen_border_box_timeout = null;
@@ -126,7 +126,7 @@ class Extension {
 
     _on_screen_border_box_hover() {
         this.auto_hide_dock_timeout = null;
-        
+
         if (!Main.overview.visible && !Main.sessionMode.isLocked) {
             this.toggle_dock_hover_timeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, TOGGLE_DOCK_HOVER_DELAY, () => {
                 if (SHOW_IN_FULLSCREEN || !global.display.get_focus_window() || !global.display.get_focus_window().is_fullscreen()) {
@@ -136,7 +136,6 @@ class Extension {
                 }
                 this.toggle_dock_hover_timeout = null;
             });
-            
         }
     }
 
@@ -147,7 +146,7 @@ class Extension {
                     this._hide_dock();
                     this.auto_hide_dock_timeout = null;
                 }
-            });   
+            });
         }
     }
 
@@ -204,8 +203,25 @@ class Extension {
 
     _create_dock() {
         this.dock = new Dock();
+        this.dock._dashContainer.connect('scroll-event', this._manageDockScroll.bind(this));
         this.screen_border_box = new ScreenBorderBox();
+        this.screen_border_box.connect('scroll-event', this._manageDockScroll.bind(this));
         this._dock_refresh();
+    }
+
+    _manageDockScroll(origin, event) {
+        let currentWorkspace = global.workspace_manager.get_active_workspace();
+        let direction = event.get_scroll_direction();
+        switch(direction) {
+        case Clutter.ScrollDirection.DOWN:
+        case Clutter.ScrollDirection.RIGHT:
+            currentWorkspace.get_neighbor(Meta.MotionDirection.RIGHT).activate(event.get_time());
+            break;
+        case Clutter.ScrollDirection.UP:
+        case Clutter.ScrollDirection.LEFT:
+            currentWorkspace.get_neighbor(Meta.MotionDirection.LEFT).activate(event.get_time());
+            break;
+        }
     }
 
     enable() {
@@ -237,7 +253,7 @@ class Extension {
             this.auto_hide_dock_timeout = null;
             GLib.source_remove(this.auto_hide_dock_timeout);
         }
-        
+
         if (this.workareas_changed) {
             global.display.disconnect(this.workareas_changed);
             this.workareas_changed = null;
@@ -246,7 +262,7 @@ class Extension {
             Main.overview.disconnect(this.overview_shown);
             this.overview_shown = null;
         }
-        
+
         Main.layoutManager.removeChrome(this.screen_border_box);
         Main.layoutManager.removeChrome(this.dock);
         this.screen_border_box.destroy();
