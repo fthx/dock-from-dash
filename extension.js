@@ -108,7 +108,9 @@ class Extension {
         this.dock.set_position(this.work_area.x, this.work_area.y + this.work_area.height);
 
         this.dock.show();
-        this._hide_dock();
+        if (!this.dock._dashContainer.get_hover()) {
+            this._hide_dock();
+        }
 
         this.refresh_screen_border_box_timeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 1000, () => {
             this._screen_border_box_refresh();
