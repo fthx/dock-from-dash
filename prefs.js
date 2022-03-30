@@ -13,7 +13,7 @@ Gettext.bindtextdomain("dock-from-dash", ExtensionUtils.getCurrentExtension().pa
 let settings;
 
 function init() {
-    settings = ExtensionUtils.getSettings('org.gnome.shell.extensions.dock_from_dash');
+    settings = ExtensionUtils.getSettings('org.gnome.shell.extensions.dock-from-dash');
 }
 
 
@@ -27,7 +27,7 @@ function buildPrefsWidget() {
 
     let showInFullScreen = buildSwitcher('show-full-screen',_("Show the dock in Fullscreen mode"));
     frame.append(showInFullScreen);
-    let hideTimeout = buildSpinButton('autohide-duration',_("Delay for autohide"), 0, 10000, 100);
+    let hideTimeout = buildSpinButton('autohide-duration',_("Delay for autohide"), 0, 1000, 50);
     frame.append(hideTimeout);
 
     frame.show();

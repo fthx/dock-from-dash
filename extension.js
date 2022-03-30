@@ -24,7 +24,7 @@ var TOGGLE_DOCK_HOVER_DELAY = 150;
 var DOCK_AUTOHIDE_DELAY = 300;
 var SHOW_IN_FULLSCREEN = false;
 
-var settings = ExtensionUtils.getSettings('org.gnome.shell.extensions.dock_from_dash');
+var settings = ExtensionUtils.getSettings('org.gnome.shell.extensions.dock-from-dash');
 
 var ScreenBorderBox = GObject.registerClass(
 class ScreenBorderBox extends St.BoxLayout {
@@ -74,7 +74,7 @@ class Dock extends Dash.Dash {
 
     _on_dock_hover() {
         if (!this._dashContainer.get_hover() && !this.keep_dock_shown) {
-            this.auto_hide_dock_timeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, DOCK_AUTOHIDE_DELAY, () => {
+            this.auto_hide_dock_timeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, settings.get_int('autohide-duration'), () => {
                 if (!this._dashContainer.get_hover()) {
                     this._hide_dock();
                     this.auto_hide_dock_timeout = null;
