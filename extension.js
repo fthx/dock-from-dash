@@ -250,7 +250,6 @@ class Extension {
 
     disable() {
         AppDisplay.AppIcon.prototype.activate = this.original_click_function;
-        Dash.Dash.prototype._itemMenuStateChanged = this.original_appicon_popupmenu_function;
 
         if (this.toggle_dock_hover_timeout) {
             this.toggle_dock_hover_timeout = null;
