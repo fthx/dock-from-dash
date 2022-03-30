@@ -20,7 +20,7 @@ var SHOW_DOCK_BOX_HEIGHT = 2;
 var SHOW_DOCK_DURATION = 100;
 var HIDE_DOCK_DURATION = 200;
 var TOGGLE_DOCK_HOVER_DELAY = 150;
-var DOCK_AUTOHIDE_DURATION = 1500;
+var DOCK_AUTOHIDE_DELAY = 300;
 var SHOW_IN_FULLSCREEN = false;
 
 
@@ -47,18 +47,32 @@ class Dock extends Dash.Dash {
         this._dashContainer.set_reactive(true);
         this.show();
         this.dock_animated = false;
+        this.keep_dock_shown = false;
     }
 
     _itemMenuStateChanged(item, opened) {
-        super._itemMenuStateChanged(item, opened);
+        if (opened) {
+            if (this._showLabelTimeoutId > 0) {
+                GLib.source_remove(this._showLabelTimeoutId);
+                this._showLabelTimeoutId = 0;
+            }
+            item.hideLabel();
 
-        this.keep_dock_shown = opened;
+            this._last_appicon_with_menu = item;
+            this.keep_dock_shown = true;
+        } else {
+            if (item == this._last_appicon_with_menu) {
+                this._last_appicon_with_menu = null;
+                this.keep_dock_shown = false
+            }
+        }
+
         this._on_dock_hover();
     }
 
     _on_dock_hover() {
         if (!this._dashContainer.get_hover() && !this.keep_dock_shown) {
-            this.auto_hide_dock_timeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, DOCK_AUTOHIDE_DURATION, () => {
+            this.auto_hide_dock_timeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, DOCK_AUTOHIDE_DELAY, () => {
                 if (!this._dashContainer.get_hover()) {
                     this._hide_dock();
                     this.auto_hide_dock_timeout = null;
