@@ -35,8 +35,9 @@ class ScreenBorderBox extends St.BoxLayout {
     }
 });
 
-var Dock = GObject.registerClass(
-class Dock extends Dash.Dash {
+var Dock = GObject.registerClass({
+    Signals: { 'updated-hover': {} },
+}, class Dock extends Dash.Dash {
     _init() {
         super._init();
         Main.layoutManager.addTopChrome(this);
@@ -46,6 +47,36 @@ class Dock extends Dash.Dash {
         this._dashContainer.set_track_hover(true);
         this._dashContainer.set_reactive(true);
         this.show();
+        this.menuIsBeingShown = false;
+        this._lastChildWithMenu = null;
+    }
+
+    _redisplay() {
+        super._redisplay();
+        let childrenList = this._box.get_children().filter(actor => {
+            return actor.child &&
+                   actor.child._delegate &&
+                   actor.child._delegate.app;
+        });
+        for (let children of childrenList) {
+            children = children.child;
+            if (!children) {
+                continue;
+            }
+            children.connect('menu-state-changed', (widget, status) => {
+                if (status) {
+                    this.menuIsBeingShown = true;
+                    this._lastChildWithMenu = widget;
+                    this.emit('updated-hover');
+                } else {
+                    if (this._lastChildWithMenu === widget) {
+                        this._lastChildWithMenu = null;
+                        this.menuIsBeingShown = false;
+                        this.emit('updated-hover');
+                    }
+                }
+            });
+        }
     }
 });
 
@@ -90,21 +121,8 @@ class Extension {
         }
     }
 
-    _modify_appicon_popupmenu_signal() {
-        this.original_appicon_popupmenu_function = Dash.Dash.prototype._itemMenuStateChanged;
-        Dash.Dash.prototype._itemMenuStateChanged = function(item, opened) {
-            if (opened) {
-                if (this._showLabelTimeoutId > 0) {
-                    GLib.source_remove(this._showLabelTimeoutId);
-                    this._showLabelTimeoutId = 0;
-                }
-    
-                item.hideLabel();
-                this.keep_dock_shown = true;
-            } else {
-                this.keep_dock_shown = false;
-            }
-        }
+    _is_hovering() {
+        return (this.dock._dashContainer.get_hover() || this.screen_border_box.get_hover() || this.dock.menuIsBeingShown);
     }
 
     _dock_refresh() {
@@ -125,7 +143,7 @@ class Extension {
         this.dock.set_position(this.work_area.x, this.work_area.y + this.work_area.height);
 
         this.dock.show();
-        if (!this.dock._dashContainer.get_hover()) {
+        if (!this._is_hovering()) {
             this._hide_dock();
         }
 
@@ -160,9 +178,9 @@ class Extension {
     }
 
     _on_dock_hover() {
-        if (!this.dock._dashContainer.get_hover() && !this.dock.keep_dock_shown) {
+        if (!this._is_hovering()) {
             this.auto_hide_dock_timeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, DOCK_AUTOHIDE_DURATION, () => {
-                if (!this.dock._dashContainer.get_hover()) {
+                if (!this._is_hovering()) {
                     this._hide_dock();
                     this.auto_hide_dock_timeout = null;
                 }
@@ -241,6 +259,7 @@ class Extension {
         this._dock_refresh();
         this.screen_border_box.connect('notify::hover', this._on_screen_border_box_hover.bind(this));
         this.dock._dashContainer.connect('notify::hover', this._on_dock_hover.bind(this));
+        this.dock.connect('updated-hover', this._on_dock_hover.bind(this));
         this.screen_border_box.connect('scroll-event', this._on_dock_scroll.bind(this));
         this.dock._dashContainer.connect('scroll-event', this._on_dock_scroll.bind(this));
     }
