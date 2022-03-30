@@ -50,14 +50,7 @@ class Dock extends Dash.Dash {
     }
 
     _itemMenuStateChanged(item, opened) {
-        if (opened) {
-            if (this._showLabelTimeoutId > 0) {
-                GLib.source_remove(this._showLabelTimeoutId);
-                this._showLabelTimeoutId = 0;
-            }
-
-            item.hideLabel();
-        }
+        super._itemMenuStateChanged(item, opened);
 
         this.keep_dock_shown = opened;
         this._on_dock_hover();
