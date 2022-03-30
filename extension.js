@@ -46,6 +46,97 @@ class Dock extends Dash.Dash {
         this._dashContainer.set_track_hover(true);
         this._dashContainer.set_reactive(true);
         this.show();
+        this.dock_animated = false;
+    }
+
+    _itemMenuStateChanged(item, opened) {
+        if (opened) {
+            if (this._showLabelTimeoutId > 0) {
+                GLib.source_remove(this._showLabelTimeoutId);
+                this._showLabelTimeoutId = 0;
+            }
+
+            item.hideLabel();
+        }
+
+        this.keep_dock_shown = opened;
+        this._on_dock_hover();
+    }
+
+    _on_dock_hover() {
+        if (!this._dashContainer.get_hover() && !this.keep_dock_shown) {
+            this.auto_hide_dock_timeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, DOCK_AUTOHIDE_DURATION, () => {
+                if (!this._dashContainer.get_hover()) {
+                    this._hide_dock();
+                    this.auto_hide_dock_timeout = null;
+                }
+            });
+        }
+    }
+
+    _on_dock_scroll(origin, event) {
+        this.active_workspace = WorkspaceManager.get_active_workspace();
+        switch(event.get_scroll_direction()) {
+            case Clutter.ScrollDirection.DOWN:
+            case Clutter.ScrollDirection.RIGHT:
+                this.active_workspace.get_neighbor(Meta.MotionDirection.RIGHT).activate(event.get_time());
+                break;
+            case Clutter.ScrollDirection.UP:
+            case Clutter.ScrollDirection.LEFT:
+                this.active_workspace.get_neighbor(Meta.MotionDirection.LEFT).activate(event.get_time());
+                break;
+        }
+    }
+
+    _on_overview_shown() {
+        if (this.dock_animated || !this.is_visible()) {
+            return;
+        }
+
+        this.dock_animated = true;
+        this.hide();
+        this.ease({
+            duration: 0,
+            translation_y: this.height,
+            mode: Clutter.AnimationMode.EASE_OUT_QUAD,
+            onComplete: () => {
+                this.dock_animated = false;
+            },
+        });
+    }
+
+    _hide_dock() {
+        if (this.dock_animated || !this.is_visible()) {
+            return;
+        }
+
+        this.dock_animated = true;
+        this.ease({
+            duration: HIDE_DOCK_DURATION,
+            translation_y: this.height,
+            mode: Clutter.AnimationMode.EASE_OUT_QUAD,
+            onComplete: () => {
+                this.dock_animated = false;
+                this.hide();
+            },
+        });
+    }
+
+    _show_dock() {
+        if (this.dock_animated || this.is_visible()) {
+            return;
+        }
+
+        this.show();
+        this.dock_animated = true;
+        this.ease({
+            duration: SHOW_DOCK_DURATION,
+            translation_y: -this.height,
+            mode: Clutter.AnimationMode.EASE_OUT_QUAD,
+            onComplete: () => {
+                this.dock_animated = false;
+            },
+        });
     }
 });
 
@@ -90,23 +181,6 @@ class Extension {
         }
     }
 
-    _modify_appicon_popupmenu_signal() {
-        this.original_appicon_popupmenu_function = Dash.Dash.prototype._itemMenuStateChanged;
-        Dash.Dash.prototype._itemMenuStateChanged = function(item, opened) {
-            if (opened) {
-                if (this._showLabelTimeoutId > 0) {
-                    GLib.source_remove(this._showLabelTimeoutId);
-                    this._showLabelTimeoutId = 0;
-                }
-    
-                item.hideLabel();
-                this.keep_dock_shown = true;
-            } else {
-                this.keep_dock_shown = false;
-            }
-        }
-    }
-
     _dock_refresh() {
         if (this.dock_refreshing) {
             return;
@@ -126,7 +200,7 @@ class Extension {
 
         this.dock.show();
         if (!this.dock._dashContainer.get_hover()) {
-            this._hide_dock();
+            this.dock._hide_dock();
         }
 
         this.refresh_screen_border_box_timeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 1000, () => {
@@ -145,13 +219,13 @@ class Extension {
     }
 
     _on_screen_border_box_hover() {
-        this.auto_hide_dock_timeout = null;
+        this.dock.auto_hide_dock_timeout = null;
 
         if (!Main.overview.visible && !Main.sessionMode.isLocked) {
             this.toggle_dock_hover_timeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, TOGGLE_DOCK_HOVER_DELAY, () => {
                 if (SHOW_IN_FULLSCREEN || !global.display.get_focus_window() || !global.display.get_focus_window().is_fullscreen()) {
                     if (this.screen_border_box.get_hover()) {
-                        this._show_dock();
+                        this.dock._show_dock();
                     }
                 }
                 this.toggle_dock_hover_timeout = null;
@@ -159,95 +233,18 @@ class Extension {
         }
     }
 
-    _on_dock_hover() {
-        if (!this.dock._dashContainer.get_hover() && !this.dock.keep_dock_shown) {
-            this.auto_hide_dock_timeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, DOCK_AUTOHIDE_DURATION, () => {
-                if (!this.dock._dashContainer.get_hover()) {
-                    this._hide_dock();
-                    this.auto_hide_dock_timeout = null;
-                }
-            });
-        }
-    }
-
-    _on_dock_scroll(origin, event) {
-        this.active_workspace = WorkspaceManager.get_active_workspace();
-        switch(event.get_scroll_direction()) {
-            case Clutter.ScrollDirection.DOWN:
-            case Clutter.ScrollDirection.RIGHT:
-                this.active_workspace.get_neighbor(Meta.MotionDirection.RIGHT).activate(event.get_time());
-                break;
-            case Clutter.ScrollDirection.UP:
-            case Clutter.ScrollDirection.LEFT:
-                this.active_workspace.get_neighbor(Meta.MotionDirection.LEFT).activate(event.get_time());
-                break;
-        }
-    }
-
-    _on_overview_shown() {
-        if (this.dock_animated || !this.dock.is_visible()) {
-            return;
-        }
-
-        this.dock_animated = true;
-        this.dock.hide();
-        this.dock.ease({
-            duration: 0,
-            translation_y: this.dock.height,
-            mode: Clutter.AnimationMode.EASE_OUT_QUAD,
-            onComplete: () => {
-                this.dock_animated = false;
-            },
-        });
-    }
-
-    _hide_dock() {
-        if (this.dock_animated || !this.dock.is_visible()) {
-            return;
-        }
-
-        this.dock_animated = true;
-        this.dock.ease({
-            duration: HIDE_DOCK_DURATION,
-            translation_y: this.dock.height,
-            mode: Clutter.AnimationMode.EASE_OUT_QUAD,
-            onComplete: () => {
-                this.dock_animated = false;
-                this.dock.hide();
-            },
-        });
-    }
-
-    _show_dock() {
-        if (this.dock_animated || this.dock.is_visible()) {
-            return;
-        }
-
-        this.dock.show();
-        this.dock_animated = true;
-        this.dock.ease({
-            duration: SHOW_DOCK_DURATION,
-            translation_y: -this.dock.height,
-            mode: Clutter.AnimationMode.EASE_OUT_QUAD,
-            onComplete: () => {
-                this.dock_animated = false;
-            },
-        });
-    }
-
     _create_dock() {
         this.dock = new Dock();
         this.screen_border_box = new ScreenBorderBox();
         this._dock_refresh();
         this.screen_border_box.connect('notify::hover', this._on_screen_border_box_hover.bind(this));
-        this.dock._dashContainer.connect('notify::hover', this._on_dock_hover.bind(this));
-        this.screen_border_box.connect('scroll-event', this._on_dock_scroll.bind(this));
-        this.dock._dashContainer.connect('scroll-event', this._on_dock_scroll.bind(this));
+        this.dock._dashContainer.connect('notify::hover', this.dock._on_dock_hover.bind(this.dock));
+        this.screen_border_box.connect('scroll-event', this.dock._on_dock_scroll.bind(this.dock));
+        this.dock._dashContainer.connect('scroll-event', this.dock._on_dock_scroll.bind(this.dock));
     }
 
     enable() {
         this._modify_native_click_behavior();
-        this._modify_appicon_popupmenu_signal();
         this._create_dock();
         Main.layoutManager.connect('startup-complete', () => {
             Main.overview.hide();
@@ -255,8 +252,7 @@ class Extension {
 
         this.dock.showAppsButton.connect('button-release-event', () => Main.overview.showApps());
         this.workareas_changed = global.display.connect('workareas-changed', this._dock_refresh.bind(this));
-        this.windows_restacked = global.display.connect('restacked', this._on_dock_hover.bind(this));
-        this.overview_shown = Main.overview.connect('shown', this._on_overview_shown.bind(this));
+        this.overview_shown = Main.overview.connect('shown', this.dock._on_overview_shown.bind(this.dock));
     }
 
     disable() {
@@ -271,15 +267,11 @@ class Extension {
             this.refresh_screen_border_box_timeout = null;
             GLib.source_remove(this.refresh_screen_border_box_timeout);
         }
-        if (this.auto_hide_dock_timeout) {
-            this.auto_hide_dock_timeout = null;
-            GLib.source_remove(this.auto_hide_dock_timeout);
+        if (this.dock.auto_hide_dock_timeout) {
+            this.dock.auto_hide_dock_timeout = null;
+            GLib.source_remove(this.dock.auto_hide_dock_timeout);
         }
 
-        if (this.windows_restacked) {
-            global.display.disconnect(this.windows_restacked);
-            this.windows_restacked = null;
-        }
         if (this.workareas_changed) {
             global.display.disconnect(this.workareas_changed);
             this.workareas_changed = null;
