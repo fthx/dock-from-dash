@@ -51,31 +51,17 @@ var Dock = GObject.registerClass({
         this._lastChildWithMenu = null;
     }
 
-    _redisplay() {
-        super._redisplay();
-        let childrenList = this._box.get_children().filter(actor => {
-            return actor.child &&
-                   actor.child._delegate &&
-                   actor.child._delegate.app;
-        });
-        for (let children of childrenList) {
-            children = children.child;
-            if (!children) {
-                continue;
+    _itemMenuStateChanged(item, opened) {
+        if (opened) {
+            this.menuIsBeingShown = true;
+            this._lastChildWithMenu = item;
+            this.emit('updated-hover');
+        } else {
+            if (this._lastChildWithMenu === item) {
+                this._lastChildWithMenu = null;
+                this.menuIsBeingShown = false;
+                this.emit('updated-hover');
             }
-            children.connect('menu-state-changed', (widget, status) => {
-                if (status) {
-                    this.menuIsBeingShown = true;
-                    this._lastChildWithMenu = widget;
-                    this.emit('updated-hover');
-                } else {
-                    if (this._lastChildWithMenu === widget) {
-                        this._lastChildWithMenu = null;
-                        this.menuIsBeingShown = false;
-                        this.emit('updated-hover');
-                    }
-                }
-            });
         }
     }
 });
