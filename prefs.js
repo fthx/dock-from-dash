@@ -7,8 +7,8 @@ const ExtensionUtils = imports.misc.extensionUtils;
 const Gio = imports.gi.Gio;
 const Gettext = imports.gettext;
 
-var _ = Gettext.domain("dock_from_dash").gettext
-Gettext.bindtextdomain("dock_from_dash", ExtensionUtils.getCurrentExtension().path + "/locale");
+var _ = Gettext.domain("dock-from-dash").gettext
+Gettext.bindtextdomain("dock-from-dash", ExtensionUtils.getCurrentExtension().path + "/locale");
 
 let settings;
 
