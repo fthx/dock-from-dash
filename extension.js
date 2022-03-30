@@ -58,6 +58,12 @@ var Dock = GObject.registerClass({
             this._lastChildWithMenu = item;
             this.emit('updated-hover');
         } else {
+            /* This allows to avoid problems with the
+             * case where the "menu closed" signal in
+             * one icon is emitted after the "menu open"
+             * signal if the user right-clicks in another
+             * icon when a menu is already being shown
+             */
             if (this._lastChildWithMenu === item) {
                 this._lastChildWithMenu = null;
                 this.menuIsBeingShown = false;
@@ -253,7 +259,6 @@ class Extension {
 
     enable() {
         this._modify_native_click_behavior();
-        this._modify_appicon_popupmenu_signal();
         this._create_dock();
         Main.layoutManager.connect('startup-complete', () => {
             Main.overview.hide();
