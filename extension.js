@@ -52,6 +52,7 @@ var Dock = GObject.registerClass({
     }
 
     _itemMenuStateChanged(item, opened) {
+        super._itemMenuStateChanged(item, opened);
         if (opened) {
             this.menuIsBeingShown = true;
             this._lastChildWithMenu = item;
