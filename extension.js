@@ -10,6 +10,7 @@ const { Clutter, GLib, GObject, Meta, Shell, St } = imports.gi;
 
 const Main = imports.ui.main;
 const Dash = imports.ui.dash;
+const ExtensionUtils = imports.misc.extensionUtils;
 const AppDisplay = imports.ui.appDisplay;
 const WorkspaceManager = global.workspace_manager;
 
@@ -23,6 +24,7 @@ var TOGGLE_DOCK_HOVER_DELAY = 150;
 var DOCK_AUTOHIDE_DELAY = 300;
 var SHOW_IN_FULLSCREEN = false;
 
+var settings = ExtensionUtils.getSettings('org.gnome.shell.extensions.dock_from_dash');
 
 var ScreenBorderBox = GObject.registerClass(
 class ScreenBorderBox extends St.BoxLayout {
@@ -230,7 +232,7 @@ class Extension {
 
         if (!Main.overview.visible && !Main.sessionMode.isLocked) {
             this.toggle_dock_hover_timeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, TOGGLE_DOCK_HOVER_DELAY, () => {
-                if (SHOW_IN_FULLSCREEN || !global.display.get_focus_window() || !global.display.get_focus_window().is_fullscreen()) {
+                if (settings.get_boolean('show-full-screen') || !global.display.get_focus_window() || !global.display.get_focus_window().is_fullscreen()) {
                     if (this.screen_border_box.get_hover()) {
                         this.dock._show_dock();
                     }

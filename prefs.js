@@ -1,0 +1,64 @@
+/* -*- mode: js2; js2-basic-offset: 4; indent-tabs-mode: nil -*- */
+
+const Gtk = imports.gi.Gtk;
+const GLib = imports.gi.GLib;
+
+const ExtensionUtils = imports.misc.extensionUtils;
+const Gio = imports.gi.Gio;
+const Gettext = imports.gettext;
+
+var _ = Gettext.domain("dock_from_dash").gettext
+Gettext.bindtextdomain("dock_from_dash", ExtensionUtils.getCurrentExtension().path + "/locale");
+
+let settings;
+
+function init() {
+    settings = ExtensionUtils.getSettings('org.gnome.shell.extensions.dock_from_dash');
+}
+
+
+function buildPrefsWidget() {
+    let frame = new Gtk.Box({ orientation: Gtk.Orientation.VERTICAL,
+                              margin_top: 10,
+                              margin_bottom: 10,
+                              margin_start: 10,
+                              margin_end: 10,
+                              spacing: 10});
+
+    let showInFullScreen = buildSwitcher('show-full-screen',_("Show the dock in Fullscreen mode"));
+    frame.append(showInFullScreen);
+    let hideTimeout = buildSpinButton('autohide-duration',_("Delay for autohide"), 0, 10000, 100);
+    frame.append(hideTimeout);
+
+    frame.show();
+    return frame;
+}
+
+function buildSwitcher(key, labelText) {
+    let hbox = new Gtk.Box({ orientation: Gtk.Orientation.HORIZONTAL, spacing: 10 });
+    let label = new Gtk.Label({ label: labelText, xalign: 0 });
+    let switcher = new Gtk.Switch({ active: settings.get_boolean(key) });
+    label.set_hexpand(true);
+    switcher.set_hexpand(false);
+    switcher.set_halign(Gtk.Align.END);
+    settings.bind(key, switcher, 'active', 3);
+    hbox.append(label);
+    hbox.append(switcher);
+    return hbox;
+}
+
+function buildSpinButton(key, labeltext, minval, maxval, step_increment) {
+    let hbox = new Gtk.Box({orientation: Gtk.Orientation.HORIZONTAL, spacing: 10 });
+    let label = new Gtk.Label({label: labeltext, xalign: 0 });
+    let adjust = new Gtk.Adjustment({lower: minval, upper: maxval, value: settings.get_int(key), step_increment: step_increment});
+    let spin = new Gtk.SpinButton({digits: 0, adjustment: adjust});
+    label.set_hexpand(true);
+    spin.set_hexpand(false);
+    spin.set_halign(Gtk.Align.END);
+    settings.bind(key, adjust, 'value', 3);
+
+    hbox.append(label);
+    hbox.append(spin);
+
+    return hbox;
+}
