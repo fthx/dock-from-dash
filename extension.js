@@ -205,6 +205,10 @@ class Extension {
         if (!this.dock._dashContainer.get_hover()) {
             this.dock._hide_dock();
         }
+        this.show_dock_at_startup_timeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 1000, () => {
+            this.dock._show_dock();
+            this.show_dock_at_startup_timeout = null;
+        });
 
         this.refresh_screen_border_box_timeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 1000, () => {
             this._screen_border_box_refresh();
@@ -267,12 +271,7 @@ class Extension {
         this._modify_native_click_behavior();
         this._create_dock();
         Main.layoutManager.connect('startup-complete', () => {
-            this.overview_hidden = Main.overview.connect('hidden', this.dock._show_dock.bind(this.dock));
             Main.overview.hide();
-            this.overview_hidden_timeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 1000, () => {
-                Main.overview.disconnect(this.overview_hidden);
-                this.overview_hidden_timeout = null;
-            });
         });
 
         this.dock.showAppsButton.connect('button-release-event', () => Main.overview.showApps());
@@ -297,9 +296,9 @@ class Extension {
             this.dock.auto_hide_dock_timeout = null;
             GLib.source_remove(this.dock.auto_hide_dock_timeout);
         }
-        if (this.overview_hidden_timeout) {
-            this.overview_hidden_timeout = null;
-            GLib.source_remove(this.overview_hidden_timeout);
+        if (this.show_dock_at_startup_timeout) {
+            this.show_dock_at_startup_timeout = null;
+            GLib.source_remove(this.show_dock_at_startup_timeout);
         }
 
         if (this.workareas_changed) {
