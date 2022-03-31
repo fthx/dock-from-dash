@@ -9,7 +9,7 @@ msgstr ""
 "Project-Id-Version: dock-from-dash\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2022-03-31 12:35+0200\n"
-"PO-Revision-Date: 2022-03-30 17:31+0200\n"
+"PO-Revision-Date: 2022-03-31 13:44+0200\n"
 "Last-Translator: Sergio Costas <rastersoft@gmail.com>\n"
 "Language-Team: Español; Castellano <rastersoft@gmail.com>\n"
 "Language: es\n"
@@ -22,34 +22,33 @@ msgstr ""
 #: prefs.js:28
 msgid "Do not auto hide the dock: screen bottom hover to toggle"
 msgstr ""
+"No ocultar de manera automática el dock: tocar la parte inferior de la "
+"pantalla para conmutar el estado"
 
 #: prefs.js:31
-#, fuzzy
 msgid "Show dock in full screen mode"
 msgstr "Mostrar el dock en modo de pantalla completa"
 
 #: prefs.js:34
 msgid "Dock background opacity (%)"
-msgstr ""
+msgstr "Opacidad del fondo del dock (%)"
 
 #: prefs.js:37
 msgid "Dock icons opacity (%)"
-msgstr ""
+msgstr "Opacidad de los iconos en el dock (%)"
 
 #: prefs.js:40
-#, fuzzy
 msgid "Delay for dock autohide (ms)"
-msgstr "Retardo para autoocultamiento"
+msgstr "Retardo para autoocultamiento del dock"
 
 #: prefs.js:43
-#, fuzzy
 msgid "Delay for dock showing (ms)"
-msgstr "Retardo para autoocultamiento"
+msgstr "Retardo antes de mostrar el dock (ms)"
 
 #: prefs.js:46
 msgid "Duration of dock showing animation (ms)"
-msgstr ""
+msgstr "Duración de la animación de mostrar el dock (ms)"
 
 #: prefs.js:49
 msgid "Duration of dock hiding animation (ms)"
-msgstr ""
+msgstr "Duración de la animación de ocultar el dock (ms)"
