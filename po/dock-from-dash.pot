@@ -2,31 +2,28 @@
 # Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
 # This file is distributed under the same license as the dock-from-dash package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
-# Sergio Costas <rastersoft@gmail.com>, 2022.
 #
+#, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: dock-from-dash\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2022-03-31 12:35+0200\n"
-"PO-Revision-Date: 2022-03-30 17:31+0200\n"
-"Last-Translator: Sergio Costas <rastersoft@gmail.com>\n"
-"Language-Team: Español; Castellano <rastersoft@gmail.com>\n"
-"Language: es\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Type: text/plain; charset=CHARSET\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"X-Generator: Gtranslator 41.0\n"
 
 #: prefs.js:28
 msgid "Do not auto hide the dock: screen bottom hover to toggle"
 msgstr ""
 
 #: prefs.js:31
-#, fuzzy
 msgid "Show dock in full screen mode"
-msgstr "Mostrar el dock en modo de pantalla completa"
+msgstr ""
 
 #: prefs.js:34
 msgid "Dock background opacity (%)"
@@ -37,14 +34,12 @@ msgid "Dock icons opacity (%)"
 msgstr ""
 
 #: prefs.js:40
-#, fuzzy
 msgid "Delay for dock autohide (ms)"
-msgstr "Retardo para autoocultamiento"
+msgstr ""
 
 #: prefs.js:43
-#, fuzzy
 msgid "Delay for dock showing (ms)"
-msgstr "Retardo para autoocultamiento"
+msgstr ""
 
 #: prefs.js:46
 msgid "Duration of dock showing animation (ms)"
