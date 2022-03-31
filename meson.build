@@ -1,5 +1,5 @@
 project('dock-from-dash',
-  version: '38.0',
+  version: '99.0',
   license: 'GPL3'
 )
 
