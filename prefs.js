@@ -25,10 +25,29 @@ function buildPrefsWidget() {
                               margin_end: 10,
                               spacing: 10});
 
-    let showInFullScreen = buildSwitcher('show-full-screen',_("Show the dock in Fullscreen mode"));
+    let alwaysShow = buildSwitcher('always-show',_("Do not auto hide the dock: screen bottom hover to toggle"));
+    frame.append(alwaysShow);
+
+    let showInFullScreen = buildSwitcher('show-in-full-screen',_("Show dock in full screen mode"));
     frame.append(showInFullScreen);
-    let hideTimeout = buildSpinButton('autohide-duration',_("Delay for autohide"), 0, 1000, 50);
+
+    let backgroundOpacity = buildSpinButton('background-opacity',_("Dock background opacity (%)"), 0, 100, 5);
+    frame.append(backgroundOpacity);
+
+    let iconsOpacity = buildSpinButton('icons-opacity',_("Dock icons opacity (%)"), 0, 100, 5);
+    frame.append(iconsOpacity);
+
+    let hideTimeout = buildSpinButton('autohide-delay',_("Delay for dock autohide (ms)"), 0, 1000, 50);
     frame.append(hideTimeout);
+
+    let toggleDelay = buildSpinButton('toggle-delay',_("Delay for dock showing (ms)"), 0, 1000, 50);
+    frame.append(toggleDelay);
+
+    let showDockDuration = buildSpinButton('show-dock-duration',_("Duration of dock showing animation (ms)"), 0, 1000, 50);
+    frame.append(showDockDuration);
+
+    let hideDockDuration = buildSpinButton('hide-dock-duration',_("Duration of dock hiding animation (ms)"), 0, 1000, 50);
+    frame.append(hideDockDuration);
 
     frame.show();
     return frame;
@@ -38,12 +57,15 @@ function buildSwitcher(key, labelText) {
     let hbox = new Gtk.Box({ orientation: Gtk.Orientation.HORIZONTAL, spacing: 10 });
     let label = new Gtk.Label({ label: labelText, xalign: 0 });
     let switcher = new Gtk.Switch({ active: settings.get_boolean(key) });
+
     label.set_hexpand(true);
     switcher.set_hexpand(false);
     switcher.set_halign(Gtk.Align.END);
     settings.bind(key, switcher, 'active', 3);
+
     hbox.append(label);
     hbox.append(switcher);
+
     return hbox;
 }
 
@@ -52,6 +74,7 @@ function buildSpinButton(key, labeltext, minval, maxval, step_increment) {
     let label = new Gtk.Label({label: labeltext, xalign: 0 });
     let adjust = new Gtk.Adjustment({lower: minval, upper: maxval, value: settings.get_int(key), step_increment: step_increment});
     let spin = new Gtk.SpinButton({digits: 0, adjustment: adjust});
+
     label.set_hexpand(true);
     spin.set_hexpand(false);
     spin.set_halign(Gtk.Align.END);

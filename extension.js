@@ -14,17 +14,11 @@ const ExtensionUtils = imports.misc.extensionUtils;
 const AppDisplay = imports.ui.appDisplay;
 const WorkspaceManager = global.workspace_manager;
 
-var DASH_MAX_HEIGHT_RATIO = 0.15;
-var DASH_OPACITY_RATIO = 1;
-var DASH_BACKGROUND_OPACITY_RATIO = 0.9;
+var DASH_MAX_HEIGHT_RATIO = 15;
 var SHOW_DOCK_BOX_HEIGHT = 2;
-var SHOW_DOCK_DURATION = 100;
-var HIDE_DOCK_DURATION = 200;
-var TOGGLE_DOCK_HOVER_DELAY = 150;
-var DOCK_AUTOHIDE_DELAY = 300;
-var SHOW_IN_FULLSCREEN = false;
 
 var settings = ExtensionUtils.getSettings('org.gnome.shell.extensions.dock-from-dash');
+
 
 var ScreenBorderBox = GObject.registerClass(
 class ScreenBorderBox extends St.BoxLayout {
@@ -43,8 +37,8 @@ class Dock extends Dash.Dash {
         super._init();
         Main.layoutManager.addTopChrome(this);
         this.showAppsButton.set_toggle_mode(false);
-        this.set_opacity(Math.round(DASH_OPACITY_RATIO * 255));
-        this._background.set_opacity(Math.round(DASH_BACKGROUND_OPACITY_RATIO * 255));
+        this.set_opacity(Math.round(settings.get_int('icons-opacity') / 100 * 255));
+        this._background.set_opacity(Math.round(settings.get_int('background-opacity') / 100 * 255));
         this._dashContainer.set_track_hover(true);
         this._dashContainer.set_reactive(true);
         this.show();
@@ -73,8 +67,8 @@ class Dock extends Dash.Dash {
     }
 
     _on_dock_hover() {
-        if (!this._dashContainer.get_hover() && !this.keep_dock_shown) {
-            this.auto_hide_dock_timeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, settings.get_int('autohide-duration'), () => {
+        if (!settings.get_boolean('always-show') && !this._dashContainer.get_hover() && !this.keep_dock_shown) {
+            this.auto_hide_dock_timeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, settings.get_int('autohide-delay'), () => {
                 if (!this._dashContainer.get_hover()) {
                     this._hide_dock();
                     this.auto_hide_dock_timeout = null;
@@ -98,7 +92,7 @@ class Dock extends Dash.Dash {
     }
 
     _on_overview_shown() {
-        if (this.dock_animated || !this.is_visible()) {
+        if (settings.get_boolean('always-show') || this.dock_animated || !this.is_visible()) {
             return;
         }
 
@@ -121,7 +115,7 @@ class Dock extends Dash.Dash {
 
         this.dock_animated = true;
         this.ease({
-            duration: HIDE_DOCK_DURATION,
+            duration: settings.get_int('hide-dock-duration'),
             translation_y: this.height,
             mode: Clutter.AnimationMode.EASE_OUT_QUAD,
             onComplete: () => {
@@ -139,7 +133,7 @@ class Dock extends Dash.Dash {
         this.show();
         this.dock_animated = true;
         this.ease({
-            duration: SHOW_DOCK_DURATION,
+            duration: settings.get_int('show-dock-duration'),
             translation_y: -this.height,
             mode: Clutter.AnimationMode.EASE_OUT_QUAD,
             onComplete: () => {
@@ -231,14 +225,28 @@ class Extension {
         this.dock.auto_hide_dock_timeout = null;
 
         if (!Main.overview.visible && !Main.sessionMode.isLocked) {
-            this.toggle_dock_hover_timeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, TOGGLE_DOCK_HOVER_DELAY, () => {
-                if (settings.get_boolean('show-full-screen') || !global.display.get_focus_window() || !global.display.get_focus_window().is_fullscreen()) {
+            this.toggle_dock_hover_timeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, settings.get_int('toggle-delay'), () => {
+                if (settings.get_boolean('show-in-full-screen') || !global.display.get_focus_window() || !global.display.get_focus_window().is_fullscreen()) {
                     if (this.screen_border_box.get_hover()) {
-                        this.dock._show_dock();
+                        if (this.dock.is_visible()) {
+                            this.dock._hide_dock();
+                        } else {
+                            this.dock._show_dock();
+                        }
                     }
                 }
                 this.toggle_dock_hover_timeout = null;
             });
+        }
+    }
+
+    _on_settings_changed() {
+        this.dock._background.set_opacity(Math.round(settings.get_int('background-opacity') / 100 * 255));
+        this.dock.set_opacity(Math.round(settings.get_int('icons-opacity') / 100 * 255));
+        if (settings.get_boolean('always-show')) {
+            this.dock._show_dock();
+        } else {
+            this.dock._hide_dock();
         }
     }
 
@@ -253,6 +261,8 @@ class Extension {
     }
 
     enable() {
+        this.settings_changed = settings.connect('changed', this._on_settings_changed.bind(this));
+
         this._modify_native_click_behavior();
         this._create_dock();
         Main.layoutManager.connect('startup-complete', () => {
@@ -266,6 +276,8 @@ class Extension {
 
     disable() {
         AppDisplay.AppIcon.prototype.activate = this.original_click_function;
+
+        settings.disconnect(this.settings_changed);
 
         if (this.toggle_dock_hover_timeout) {
             this.toggle_dock_hover_timeout = null;
