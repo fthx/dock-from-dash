@@ -17,7 +17,7 @@ const WorkspaceManager = global.workspace_manager;
 var DASH_MAX_HEIGHT_RATIO = 15;
 var SHOW_DOCK_BOX_HEIGHT = 2;
 
-var settings = ExtensionUtils.getSettings('org.gnome.shell.extensions.dock-from-dash');
+var settings;
 
 
 var ScreenBorderBox = GObject.registerClass(
@@ -261,6 +261,7 @@ class Extension {
     }
 
     enable() {
+        settings = ExtensionUtils.getSettings('org.gnome.shell.extensions.dock-from-dash')
         this.settings_changed = settings.connect('changed', this._on_settings_changed.bind(this));
 
         this._modify_native_click_behavior();
@@ -305,6 +306,7 @@ class Extension {
         Main.layoutManager.removeChrome(this.dock);
         this.screen_border_box.destroy();
         this.dock.destroy();
+        settings = null;
     }
 }
 
