@@ -24,7 +24,7 @@ var ScreenBorderBox = GObject.registerClass(
 class ScreenBorderBox extends St.BoxLayout {
     _init() {
         super._init();
-        Main.layoutManager.addTopChrome(this);
+        Main.layoutManager.addChrome(this);
         this.set_reactive(true);
         this.set_track_hover(true);
         this.show();
