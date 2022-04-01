@@ -205,14 +205,22 @@ class Extension {
         if (!this.dock._dashContainer.get_hover()) {
             this.dock._hide_dock();
         }
+        if (this.show_dock_at_startup_timeout) {
+            GLib.source_remove(this.show_dock_at_startup_timeout);
+        }
         this.show_dock_at_startup_timeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 1000, () => {
             this.dock._show_dock();
             this.show_dock_at_startup_timeout = null;
+            return false;
         });
 
+        if (this.refresh_screen_border_box_timeout) {
+            GLib.source_remove(this.refresh_screen_border_box_timeout);
+        }
         this.refresh_screen_border_box_timeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 1000, () => {
             this._screen_border_box_refresh();
             this.refresh_screen_border_box_timeout = null;
+            return false;
         });
 
         this.dock_refreshing = false;
@@ -226,9 +234,23 @@ class Extension {
     }
 
     _on_screen_border_box_hover() {
-        this.dock.auto_hide_dock_timeout = null;
+        if (!this.screen_border_box.get_hover()) {
+            if (this.toggle_dock_hover_timeout) {
+                GLib.source_remove(this.dock.auto_hide_dock_timeout);
+                this.toggle_dock_hover_timeout = null;
+            }
+            return;
+        }
+
+        if (this.dock.auto_hide_dock_timeout) {
+            this.dock.auto_hide_dock_timeout = null;
+            GLib.source_remove(this.dock.auto_hide_dock_timeout);
+        }
 
         if (!Main.overview.visible && !Main.sessionMode.isLocked) {
+            if (this.toggle_dock_hover_timeout) {
+                return;
+            }
             this.toggle_dock_hover_timeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, settings.get_int('toggle-delay'), () => {
                 if (settings.get_boolean('show-in-full-screen') || !global.display.get_focus_window() || !global.display.get_focus_window().is_fullscreen()) {
                     if (this.screen_border_box.get_hover() && !this.dock.is_visible()) {
@@ -236,6 +258,7 @@ class Extension {
                     }
                 }
                 this.toggle_dock_hover_timeout = null;
+                return false;
             });
         }
     }
@@ -266,8 +289,10 @@ class Extension {
 
         this._modify_native_click_behavior();
         this._create_dock();
-        Main.layoutManager.connect('startup-complete', () => {
+        this._startupLayoutCompleteId = Main.layoutManager.connect('startup-complete', () => {
             Main.overview.hide();
+            Main.layoutManager.disconnect(this._startupLayoutCompleteId);
+            this._startupLayoutCompleteId = 0;
         });
 
         this.dock.showAppsButton.connect('button-release-event', () => Main.overview.showApps());
@@ -304,6 +329,10 @@ class Extension {
         if (this.overview_shown) {
             Main.overview.disconnect(this.overview_shown);
             this.overview_shown = null;
+        }
+        if (this._startupLayoutCompleteId) {
+            Main.layoutManager.disconnect(this._startupLayoutCompleteId);
+            this._startupLayoutCompleteId = 0;
         }
 
         Main.layoutManager.removeChrome(this.screen_border_box);
