@@ -190,16 +190,20 @@ class Extension {
         }
         this.dock_refreshing = true;
 
-        this.work_area = Main.layoutManager.getWorkAreaForMonitor(Main.layoutManager.primaryIndex);
-        if (!this.work_area) {
+        let workArea = Main.layoutManager.getWorkAreaForMonitor(Main.layoutManager.primaryIndex);
+        if (!workArea) {
             return;
         }
+        this._current_workarea_data.x = workArea.x;
+        this._current_workarea_data.y = workArea.y;
+        this._current_workarea_data.width = workArea.width;
+        this._current_workarea_data.height = workArea.height;
 
-        this.max_dock_height = Math.round(this.work_area.height * DASH_MAX_HEIGHT_RATIO);
-        this.dock.set_width(this.work_area.width);
-        this.dock.set_height(Math.min(this.dock.get_preferred_height(this.work_area.width), this.max_dock_height));
+        this.max_dock_height = Math.round(this._current_workarea_data.height * DASH_MAX_HEIGHT_RATIO);
+        this.dock.set_width(this._current_workarea_data.width);
+        this.dock.set_height(Math.min(this.dock.get_preferred_height(this._current_workarea_data.width), this.max_dock_height));
         this.dock.setMaxSize(this.dock.width, this.max_dock_height);
-        this.dock.set_position(this.work_area.x, this.work_area.y + this.work_area.height);
+        this.dock.set_position(this._current_workarea_data.x, this._current_workarea_data.y + this._current_workarea_data.height);
 
         this.dock.show();
         if (!this.dock._dashContainer.get_hover()) {
@@ -228,8 +232,8 @@ class Extension {
 
     _screen_border_box_refresh() {
         this.screen_border_box.set_size(this.dock._dashContainer.width, SHOW_DOCK_BOX_HEIGHT);
-        this.screen_border_box_x = this.work_area.x + Math.round((this.work_area.width - this.dock._dashContainer.width) / 2);
-        this.screen_border_box_y = this.work_area.y + this.work_area.height - SHOW_DOCK_BOX_HEIGHT;
+        this.screen_border_box_x = this._current_workarea_data.x + Math.round((this._current_workarea_data.width - this.dock._dashContainer.width) / 2);
+        this.screen_border_box_y = this._current_workarea_data.y + this._current_workarea_data.height - SHOW_DOCK_BOX_HEIGHT;
         this.screen_border_box.set_position(this.screen_border_box_x, this.screen_border_box_y);
     }
 
@@ -284,6 +288,7 @@ class Extension {
     }
 
     enable() {
+        this._current_workarea_data = {x:0, y:0, width:0, height:0};
         settings = ExtensionUtils.getSettings('org.gnome.shell.extensions.dock-from-dash')
         this.settings_changed = settings.connect('changed', this._on_settings_changed.bind(this));
 
@@ -296,7 +301,19 @@ class Extension {
         });
 
         this.dock.showAppsButton.connect('button-release-event', () => Main.overview.showApps());
-        this.workareas_changed = global.display.connect('workareas-changed', this._dock_refresh.bind(this));
+        this.workareas_changed = global.display.connect('workareas-changed', () => {
+            let workArea = Main.layoutManager.getWorkAreaForMonitor(Main.layoutManager.primaryIndex);
+            if (!workArea) {
+                return;
+            }
+            if ((workArea.x == this._current_workarea_data.x) &&
+                (workArea.y == this._current_workarea_data.y) &&
+                (workArea.width == this._current_workarea_data.width) &&
+                (workArea.height == this._current_workarea_data.height)) {
+                    return;
+                }
+            this._dock_refresh();
+        });
         this.overview_shown = Main.overview.connect('shown', this.dock._on_overview_shown.bind(this.dock));
     }
 
