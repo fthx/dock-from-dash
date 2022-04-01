@@ -25,7 +25,7 @@ function buildPrefsWidget() {
                               margin_end: 10,
                               spacing: 10});
 
-    let alwaysShow = buildSwitcher('always-show',_("Do not auto hide the dock: screen bottom hover to toggle"));
+    let alwaysShow = buildSwitcher('always-show',_("Always show the dock"));
     frame.append(alwaysShow);
 
     let showInFullScreen = buildSwitcher('show-in-full-screen',_("Show dock in full screen mode"));

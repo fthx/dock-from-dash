@@ -231,12 +231,8 @@ class Extension {
         if (!Main.overview.visible && !Main.sessionMode.isLocked) {
             this.toggle_dock_hover_timeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, settings.get_int('toggle-delay'), () => {
                 if (settings.get_boolean('show-in-full-screen') || !global.display.get_focus_window() || !global.display.get_focus_window().is_fullscreen()) {
-                    if (this.screen_border_box.get_hover()) {
-                        if (this.dock.is_visible()) {
-                            this.dock._hide_dock();
-                        } else {
-                            this.dock._show_dock();
-                        }
+                    if (this.screen_border_box.get_hover() && !this.dock.is_visible()) {
+                        this.dock._show_dock();
                     }
                 }
                 this.toggle_dock_hover_timeout = null;
