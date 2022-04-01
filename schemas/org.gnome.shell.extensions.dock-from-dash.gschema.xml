@@ -5,8 +5,8 @@
 
     <key type="b" name="always-show">
         <default>false</default>
-        <summary>Do not auto hide the dock</summary>
-        <description>Keep the dock always visible, just toggled by hovering the bottom of the screen.</description>
+        <summary>Always show the dock</summary>
+        <description>Keep the dock always visible.</description>
     </key>
 
     <key type="b" name="show-in-full-screen">
