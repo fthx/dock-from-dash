@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: dock-from-dash\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-03-31 12:35+0200\n"
+"POT-Creation-Date: 2022-04-01 15:09+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -18,7 +18,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 
 #: prefs.js:28
-msgid "Do not auto hide the dock: screen bottom hover to toggle"
+msgid "Always show the dock"
 msgstr ""
 
 #: prefs.js:31

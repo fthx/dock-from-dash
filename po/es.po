@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: dock-from-dash\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-03-31 12:35+0200\n"
+"POT-Creation-Date: 2022-04-01 15:09+0200\n"
 "PO-Revision-Date: 2022-03-31 13:44+0200\n"
 "Last-Translator: Sergio Costas <rastersoft@gmail.com>\n"
 "Language-Team: Español; Castellano <rastersoft@gmail.com>\n"
@@ -20,10 +20,8 @@ msgstr ""
 "X-Generator: Gtranslator 41.0\n"
 
 #: prefs.js:28
-msgid "Do not auto hide the dock: screen bottom hover to toggle"
+msgid "Always show the dock"
 msgstr ""
-"No ocultar de manera automática el dock: tocar la parte inferior de la "
-"pantalla para conmutar el estado"
 
 #: prefs.js:31
 msgid "Show dock in full screen mode"
@@ -52,3 +50,8 @@ msgstr "Duración de la animación de mostrar el dock (ms)"
 #: prefs.js:49
 msgid "Duration of dock hiding animation (ms)"
 msgstr "Duración de la animación de ocultar el dock (ms)"
+
+#~ msgid "Do not auto hide the dock: screen bottom hover to toggle"
+#~ msgstr ""
+#~ "No ocultar de manera automática el dock: tocar la parte inferior de la "
+#~ "pantalla para conmutar el estado"
