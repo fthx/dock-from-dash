@@ -71,7 +71,7 @@ class Dock extends Dash.Dash {
             this.auto_hide_dock_timeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, settings.get_int('autohide-delay'), () => {
                 if (!this._dashContainer.get_hover()) {
                     this._hide_dock();
-                    this.auto_hide_dock_timeout = null;
+                    this.auto_hide_dock_timeout = 0;
                 }
             });
         }
@@ -171,10 +171,11 @@ class Extension {
                         if (this.app.get_windows()[0].has_focus() && this.app.get_windows()[0].can_minimize()) {
                             this.app.get_windows()[0].minimize();
                             Main.overview.hide();
-                        }
-                        if (!this.app.get_windows()[0].has_focus()) {
-                            this.app.get_windows()[0].activate(global.get_current_time());
-                            Main.overview.hide();
+                        } else {
+                            if (!this.app.get_windows()[0].has_focus()) {
+                                this.app.get_windows()[0].activate(global.get_current_time());
+                                Main.overview.hide();
+                            }
                         }
                     break;
                     default:
@@ -207,12 +208,16 @@ class Extension {
         }
         this.show_dock_at_startup_timeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 1000, () => {
             this.dock._show_dock();
-            this.show_dock_at_startup_timeout = null;
+            this.show_dock_at_startup_timeout = 0;
         });
 
+        if (this.refresh_screen_border_box_timeout) {
+            GLib.source_remove(this.refresh_screen_border_box_timeout);
+        }
         this.refresh_screen_border_box_timeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 1000, () => {
             this._screen_border_box_refresh();
-            this.refresh_screen_border_box_timeout = null;
+            this.refresh_screen_border_box_timeout = 0;
+            return false;
         });
 
         this.dock_refreshing = false;
@@ -226,16 +231,31 @@ class Extension {
     }
 
     _on_screen_border_box_hover() {
-        this.dock.auto_hide_dock_timeout = null;
+        if (!this.screen_border_box.get_hover()) {
+            if (this.toggle_dock_hover_timeout) {
+                this.toggle_dock_hover_timeout = 0;
+                GLib.source_remove(this.dock.auto_hide_dock_timeout);
+            }
+            return;
+        }
+
+        if (this.dock.auto_hide_dock_timeout) {
+            this.dock.auto_hide_dock_timeout = 0;
+            GLib.source_remove(this.dock.auto_hide_dock_timeout);
+        }
 
         if (!Main.overview.visible && !Main.sessionMode.isLocked) {
+            if (this.toggle_dock_hover_timeout) {
+                return;
+            }
             this.toggle_dock_hover_timeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, settings.get_int('toggle-delay'), () => {
                 if (settings.get_boolean('show-in-full-screen') || !global.display.get_focus_window() || !global.display.get_focus_window().is_fullscreen()) {
                     if (this.screen_border_box.get_hover() && !this.dock.is_visible()) {
                         this.dock._show_dock();
                     }
                 }
-                this.toggle_dock_hover_timeout = null;
+                this.toggle_dock_hover_timeout = 0;
+                return false;
             });
         }
     }
@@ -281,19 +301,19 @@ class Extension {
         settings.disconnect(this.settings_changed);
 
         if (this.toggle_dock_hover_timeout) {
-            this.toggle_dock_hover_timeout = null;
+            this.toggle_dock_hover_timeout = 0;
             GLib.source_remove(this.toggle_dock_hover_timeout);
         }
         if (this.refresh_screen_border_box_timeout) {
-            this.refresh_screen_border_box_timeout = null;
+            this.refresh_screen_border_box_timeout = 0;
             GLib.source_remove(this.refresh_screen_border_box_timeout);
         }
         if (this.dock.auto_hide_dock_timeout) {
-            this.dock.auto_hide_dock_timeout = null;
+            this.dock.auto_hide_dock_timeout = 0;
             GLib.source_remove(this.dock.auto_hide_dock_timeout);
         }
         if (this.show_dock_at_startup_timeout) {
-            this.show_dock_at_startup_timeout = null;
+            this.show_dock_at_startup_timeout = 0;
             GLib.source_remove(this.show_dock_at_startup_timeout);
         }
 
