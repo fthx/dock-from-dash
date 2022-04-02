@@ -133,7 +133,7 @@ class Dock extends Dash.Dash {
         this.show();
         this.dock_animated = true;
         this.ease({
-            duration: settings.get_int('show-dock-duration'),
+            duration: this.show_dock_duration,
             translation_y: -this.height,
             mode: Clutter.AnimationMode.EASE_OUT_QUAD,
             onComplete: () => {
@@ -201,6 +201,12 @@ class Extension {
         this.dock.set_height(Math.min(this.dock.get_preferred_height(this.work_area.width), this.max_dock_height));
         this.dock.setMaxSize(this.dock.width, this.max_dock_height);
         this.dock.set_position(this.work_area.x, this.work_area.y + this.work_area.height);
+
+        if (settings.get_boolean('always-show')) {
+            this.dock.show_dock_duration = 0;
+        } else {
+            this.dock.show_dock_duration = settings.get_int('show-dock-duration');
+        }
 
         this.dock.show();
         if (!this.dock._dashContainer.get_hover()) {
@@ -271,6 +277,7 @@ class Extension {
         } else {
             this.dock._hide_dock();
         }
+        this._dock_refresh();
     }
 
     _create_dock() {
