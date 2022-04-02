@@ -186,6 +186,7 @@ class Extension {
     }
 
     _dock_refresh() {
+        Main.notify('dock refresh');
         if (this.dock_refreshing) {
             return;
         }
@@ -196,7 +197,7 @@ class Extension {
             return;
         }
 
-        this.max_dock_height = Math.round(this.work_area.height * DASH_MAX_HEIGHT_RATIO);
+        this.max_dock_height = Math.round(this.work_area.height * DASH_MAX_HEIGHT_RATIO / 100);
         this.dock.set_width(this.work_area.width);
         this.dock.set_height(Math.min(this.dock.get_preferred_height(this.work_area.width), this.max_dock_height));
         this.dock.setMaxSize(this.dock.width, this.max_dock_height);
