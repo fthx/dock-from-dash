@@ -206,10 +206,13 @@ class Extension {
         if (!this.dock._dashContainer.get_hover()) {
             this.dock._hide_dock();
         }
-        this.show_dock_at_startup_timeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 1000, () => {
-            this.dock._show_dock();
-            this.show_dock_at_startup_timeout = 0;
-        });
+
+        if (settings.get_boolean('always-show')) {
+            this.show_dock_at_startup_timeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 1000, () => {
+                this.dock._show_dock();
+                this.show_dock_at_startup_timeout = 0;
+            });
+        }
 
         if (this.refresh_screen_border_box_timeout) {
             GLib.source_remove(this.refresh_screen_border_box_timeout);
