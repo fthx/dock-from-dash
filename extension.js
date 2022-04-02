@@ -186,7 +186,6 @@ class Extension {
     }
 
     _dock_refresh() {
-        Main.notify('dock refresh');
         if (this.dock_refreshing) {
             return;
         }
