@@ -133,7 +133,7 @@ class Dock extends Dash.Dash {
         });
     }
 
-    _update_position() {
+    _update_size() {
         this.work_area = Main.layoutManager.getWorkAreaForMonitor(Main.layoutManager.primaryIndex);
         if (!this.work_area) {
             return;
@@ -143,11 +143,6 @@ class Dock extends Dash.Dash {
         this.set_width(this.work_area.width);
         this.set_height(Math.min(this.get_preferred_height(this.work_area.width), this.max_dock_height));
         this.setMaxSize(this.width, this.max_dock_height);
-        if (settings.get_boolean('always-show')) {
-            this.set_position(this.work_area.x, this.work_area.y + this.work_area.height - this.height);
-        } else {
-            this.set_position(this.work_area.x, this.work_area.y + this.work_area.height);
-        }
     }
 
 });
@@ -200,16 +195,12 @@ class Extension {
         }
         this.dock_refreshing = true;
 
-        this.dock._update_position();
-
-        if (this.refresh_screen_border_box_timeout) {
-            GLib.source_remove(this.refresh_screen_border_box_timeout);
+        this.dock._update_size();
+        if (settings.get_boolean('always-show')) {
+            this.dock.set_position(this.dock.work_area.x, this.dock.work_area.y + this.dock.work_area.height - this.dock.height);
+        } else {
+            this.dock.set_position(this.dock.work_area.x, this.dock.work_area.y + this.dock.work_area.height);
         }
-        this.refresh_screen_border_box_timeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 1000, () => {
-            this._screen_border_box_refresh();
-            this.refresh_screen_border_box_timeout = 0;
-            return false;
-        });
 
         this.dock_refreshing = false;
     }
@@ -270,12 +261,17 @@ class Extension {
         this.dock = new Dock();
         this.screen_border_box = new ScreenBorderBox();
 
+        this.dock.connect('notify::position', this._screen_border_box_refresh.bind(this));
+        this.dock.connect('notify::size', this._screen_border_box_refresh.bind(this));
         this._dock_refresh();
-
+        
         this.screen_border_box.connect('notify::hover', this._on_screen_border_box_hover.bind(this));
         this.dock._dashContainer.connect('notify::hover', this.dock._on_dock_hover.bind(this.dock));
         this.screen_border_box.connect('scroll-event', this.dock._on_dock_scroll.bind(this.dock));
         this.dock._dashContainer.connect('scroll-event', this.dock._on_dock_scroll.bind(this.dock));
+
+        this.dock.showAppsButton.connect('button-release-event', () => Main.overview.showApps());
+        this.workareas_changed = global.display.connect('workareas-changed', this._dock_refresh.bind(this));
     }
 
     enable() {
@@ -285,11 +281,10 @@ class Extension {
         this._modify_native_click_behavior();
         this._create_dock();
         Main.layoutManager.connect('startup-complete', () => {
+            this.dock._show_dock();
             Main.overview.hide();
         });
 
-        this.dock.showAppsButton.connect('button-release-event', () => Main.overview.showApps());
-        this.workareas_changed = global.display.connect_after('workareas-changed', this._dock_refresh.bind(this));
     }
 
     disable() {
@@ -299,10 +294,6 @@ class Extension {
             settings.disconnect(this.settings_changed);
         }
 
-        if (this.refresh_screen_border_box_timeout) {
-            this.refresh_screen_border_box_timeout = 0;
-            GLib.source_remove(this.refresh_screen_border_box_timeout);
-        }
         if (this.toggle_dock_hover_timeout) {
             this.toggle_dock_hover_timeout = 0;
             GLib.source_remove(this.toggle_dock_hover_timeout);
@@ -310,10 +301,6 @@ class Extension {
         if (this.dock.auto_hide_dock_timeout) {
             this.dock.auto_hide_dock_timeout = 0;
             GLib.source_remove(this.dock.auto_hide_dock_timeout);
-        }
-        if (this.show_dock_at_startup_timeout) {
-            this.show_dock_at_startup_timeout = 0;
-            GLib.source_remove(this.show_dock_at_startup_timeout);
         }
 
         if (this.workareas_changed) {
