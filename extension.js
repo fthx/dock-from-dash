@@ -264,7 +264,7 @@ class Extension {
         this.dock.connect('notify::position', this._screen_border_box_refresh.bind(this));
         this.dock.connect('notify::size', this._screen_border_box_refresh.bind(this));
         this._dock_refresh();
-        
+
         this.screen_border_box.connect('notify::hover', this._on_screen_border_box_hover.bind(this));
         this.dock._dashContainer.connect('notify::hover', this.dock._on_dock_hover.bind(this.dock));
         this.screen_border_box.connect('scroll-event', this.dock._on_dock_scroll.bind(this.dock));
@@ -281,8 +281,11 @@ class Extension {
         this._modify_native_click_behavior();
         this._create_dock();
         Main.layoutManager.connect('startup-complete', () => {
-            this.dock._show_dock();
             Main.overview.hide();
+            this.overview_hidden = Main.overview.connect('hidden', () => {
+                this.dock._show_dock();
+                Main.overview.disconnect(this.overview_hidden);
+            })
         });
 
     }
