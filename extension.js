@@ -92,7 +92,7 @@ class Dock extends Dash.Dash {
     }
 
     _hide_dock() {
-        if (this.dock_animated || !this.is_visible()) {
+        if (this.dock_animated) {
             return;
         }
 
@@ -113,7 +113,7 @@ class Dock extends Dash.Dash {
     }
 
     _show_dock() {
-        if (this.dock_animated || this.is_visible()) {
+        if (this.dock_animated) {
             return;
         }
 
@@ -245,7 +245,7 @@ class Extension {
             }
             this.toggle_dock_hover_timeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, settings.get_int('toggle-delay'), () => {
                 if (settings.get_boolean('show-in-full-screen') || !global.display.get_focus_window() || !global.display.get_focus_window().is_fullscreen()) {
-                    if (this.screen_border_box.get_hover() && !this.dock.is_visible()) {
+                    if (this.screen_border_box.get_hover()) {
                         this.dock._show_dock();
                     }
                 }
@@ -289,7 +289,7 @@ class Extension {
         });
 
         this.dock.showAppsButton.connect('button-release-event', () => Main.overview.showApps());
-        this.workareas_changed = global.display.connect('workareas-changed', this._dock_refresh.bind(this));
+        this.workareas_changed = global.display.connect_after('workareas-changed', this._dock_refresh.bind(this));
     }
 
     disable() {
