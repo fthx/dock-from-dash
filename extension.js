@@ -279,9 +279,10 @@ class Extension {
         this.settings_changed = settings.connect('changed', this._on_settings_changed.bind(this));
 
         this._modify_native_click_behavior();
+        
         this._create_dock();
         this.dock.show();
-        if (!this.dock._dashContainer.get_hover()) {
+        if (!settings.get_boolean('always-show') && !this.dock._dashContainer.get_hover()) {
             this.dock._hide_dock();
         }
 
