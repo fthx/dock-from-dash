@@ -133,6 +133,23 @@ class Dock extends Dash.Dash {
         });
     }
 
+    _update_position() {
+        this.work_area = Main.layoutManager.getWorkAreaForMonitor(Main.layoutManager.primaryIndex);
+        if (!this.work_area) {
+            return;
+        }
+
+        this.max_dock_height = Math.round(this.work_area.height * DASH_MAX_HEIGHT_RATIO / 100);
+        this.set_width(this.work_area.width);
+        this.set_height(Math.min(this.get_preferred_height(this.work_area.width), this.max_dock_height));
+        this.setMaxSize(this.width, this.max_dock_height);
+        if (settings.get_boolean('always-show')) {
+            this.set_position(this.work_area.x, this.work_area.y + this.work_area.height - this.height);
+        } else {
+            this.set_position(this.work_area.x, this.work_area.y + this.work_area.height);
+        }
+    }
+
 });
 
 class Extension {
@@ -183,18 +200,16 @@ class Extension {
         }
         this.dock_refreshing = true;
 
-        this.dock.work_area = Main.layoutManager.getWorkAreaForMonitor(Main.layoutManager.primaryIndex);
-        if (!this.dock.work_area) {
-            return;
+        this.dock._update_position();
+
+        if (this.refresh_screen_border_box_timeout) {
+            GLib.source_remove(this.refresh_screen_border_box_timeout);
         }
-
-        this.dock.max_dock_height = Math.round(this.dock.work_area.height * DASH_MAX_HEIGHT_RATIO / 100);
-        this.dock.set_width(this.dock.work_area.width);
-        this.dock.set_height(Math.min(this.dock.get_preferred_height(this.dock.work_area.width), this.dock.max_dock_height));
-        this.dock.setMaxSize(this.dock.width, this.dock.max_dock_height);
-        this.dock.set_position(this.dock.work_area.x, this.dock.work_area.y + this.dock.work_area.height - this.dock.height);
-
-        this._screen_border_box_refresh();
+        this.refresh_screen_border_box_timeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 1000, () => {
+            this._screen_border_box_refresh();
+            this.refresh_screen_border_box_timeout = 0;
+            return false;
+        });
 
         this.dock_refreshing = false;
     }
@@ -256,7 +271,7 @@ class Extension {
         this.screen_border_box = new ScreenBorderBox();
 
         this._dock_refresh();
-        
+
         this.screen_border_box.connect('notify::hover', this._on_screen_border_box_hover.bind(this));
         this.dock._dashContainer.connect('notify::hover', this.dock._on_dock_hover.bind(this.dock));
         this.screen_border_box.connect('scroll-event', this.dock._on_dock_scroll.bind(this.dock));
@@ -274,7 +289,7 @@ class Extension {
         });
 
         this.dock.showAppsButton.connect('button-release-event', () => Main.overview.showApps());
-        this.workareas_changed = global.display.connect_after('workareas-changed', this._dock_refresh.bind(this));
+        this.workareas_changed = global.display.connect('workareas-changed', this._dock_refresh.bind(this));
     }
 
     disable() {
@@ -284,6 +299,10 @@ class Extension {
             settings.disconnect(this.settings_changed);
         }
 
+        if (this.refresh_screen_border_box_timeout) {
+            this.refresh_screen_border_box_timeout = 0;
+            GLib.source_remove(this.refresh_screen_border_box_timeout);
+        }
         if (this.toggle_dock_hover_timeout) {
             this.toggle_dock_hover_timeout = 0;
             GLib.source_remove(this.toggle_dock_hover_timeout);
