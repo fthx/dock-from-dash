@@ -202,6 +202,11 @@ class Extension {
             this.dock.set_position(this.dock.work_area.x, this.dock.work_area.y + this.dock.work_area.height);
         }
 
+        this.dock.show();
+        if (!settings.get_boolean('always-show') && !this.dock._dashContainer.get_hover()) {
+            this.dock._hide_dock();
+        }
+
         this.dock_refreshing = false;
     }
 
@@ -271,7 +276,7 @@ class Extension {
         this.dock._dashContainer.connect('scroll-event', this.dock._on_dock_scroll.bind(this.dock));
 
         this.dock.showAppsButton.connect('button-release-event', () => Main.overview.showApps());
-        this.workareas_changed = global.display.connect('workareas-changed', this._dock_refresh.bind(this));
+        this.workareas_changed = global.display.connect_after('workareas-changed', this._dock_refresh.bind(this));
     }
 
     enable() {
@@ -279,19 +284,10 @@ class Extension {
         this.settings_changed = settings.connect('changed', this._on_settings_changed.bind(this));
 
         this._modify_native_click_behavior();
-        
         this._create_dock();
-        this.dock.show();
-        if (!settings.get_boolean('always-show') && !this.dock._dashContainer.get_hover()) {
-            this.dock._hide_dock();
-        }
 
         Main.layoutManager.connect('startup-complete', () => {
             Main.overview.hide();
-            this.overview_hidden = Main.overview.connect('hidden', () => {
-                this.dock._show_dock();
-                Main.overview.disconnect(this.overview_hidden);
-            })
         });
     }
 
