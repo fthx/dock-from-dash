@@ -196,7 +196,7 @@ class Extension {
         this.dock_refreshing = true;
 
         this.dock._update_size();
-        if (settings.get_boolean('always-show')) {
+        if (settings.get_boolean('always-show') || this.dock.is_visible()) {
             this.dock.set_position(this.dock.work_area.x, this.dock.work_area.y + this.dock.work_area.height - this.dock.height);
         } else {
             this.dock.set_position(this.dock.work_area.x, this.dock.work_area.y + this.dock.work_area.height);
