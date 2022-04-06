@@ -251,6 +251,16 @@ class Extension {
         }
     }
 
+    _on_overview_shown() {
+        this.dock.hide();
+    }
+
+    _on_overview_hiding() {
+        if (settings.get_boolean('always-show')) {
+            this.dock.show();
+        }
+    }
+
     _on_settings_changed() {
         this.dock._background.set_opacity(Math.round(settings.get_int('background-opacity') / 100 * 255));
         this.dock.set_opacity(Math.round(settings.get_int('icons-opacity') / 100 * 255));
@@ -269,8 +279,11 @@ class Extension {
         this.dock._dashContainer.connect('notify::hover', this.dock._on_dock_hover.bind(this.dock));
         this.screen_border_box.connect('scroll-event', this.dock._on_dock_scroll.bind(this.dock));
         this.dock._dashContainer.connect('scroll-event', this.dock._on_dock_scroll.bind(this.dock));
-
         this.dock.showAppsButton.connect('button-release-event', () => Main.overview.showApps());
+
+        this.overview_shown = Main.overview.connect('shown', this._on_overview_shown.bind(this));
+        this.overview_hiding = Main.overview.connect('hiding', this._on_overview_hiding.bind(this));
+
         this.workareas_changed = global.display.connect_after('workareas-changed', this._dock_refresh.bind(this));
     }
 
@@ -291,6 +304,13 @@ class Extension {
 
         if (this.settings_changed) {
             settings.disconnect(this.settings_changed);
+        }
+
+        if (this.overview_shown) {
+            Main.overview.disconnect(this.overview_shown);
+        }
+        if (this.overview_hiding) {
+            Main.overview.disconnect(this.overview_hiding);
         }
 
         if (this.toggle_dock_hover_timeout) {
