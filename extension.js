@@ -254,11 +254,6 @@ class Extension {
     _on_settings_changed() {
         this.dock._background.set_opacity(Math.round(settings.get_int('background-opacity') / 100 * 255));
         this.dock.set_opacity(Math.round(settings.get_int('icons-opacity') / 100 * 255));
-        if (settings.get_boolean('always-show')) {
-            this.dock._show_dock();
-        } else {
-            this.dock._hide_dock();
-        }
         this._dock_refresh();
     }
 
