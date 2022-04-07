@@ -253,12 +253,14 @@ class Extension {
 
     _on_overview_shown() {
         this.dock.hide();
+        this.screen_border_box.hide();
     }
 
     _on_overview_hiding() {
         if (settings.get_boolean('always-show')) {
             this.dock.show();
         }
+        this.screen_border_box.show();
     }
 
     _on_settings_changed() {
@@ -294,7 +296,7 @@ class Extension {
         this._modify_native_click_behavior();
         this._create_dock();
 
-        Main.layoutManager.connect('startup-complete', () => {
+        this.startup_complete = Main.layoutManager.connect('startup-complete', () => {
             Main.overview.hide();
         });
     }
@@ -305,14 +307,12 @@ class Extension {
         if (this.settings_changed) {
             settings.disconnect(this.settings_changed);
         }
-
         if (this.overview_shown) {
             Main.overview.disconnect(this.overview_shown);
         }
         if (this.overview_hiding) {
             Main.overview.disconnect(this.overview_hiding);
         }
-
         if (this.toggle_dock_hover_timeout) {
             this.toggle_dock_hover_timeout = 0;
             GLib.source_remove(this.toggle_dock_hover_timeout);
@@ -321,10 +321,12 @@ class Extension {
             this.dock.auto_hide_dock_timeout = 0;
             GLib.source_remove(this.dock.auto_hide_dock_timeout);
         }
-
         if (this.workareas_changed) {
             global.display.disconnect(this.workareas_changed);
             this.workareas_changed = null;
+        }
+        if (this.startup_complete) {
+            Main.layoutManager.disconnect(this.startup_complete);
         }
 
         Main.layoutManager.removeChrome(this.screen_border_box);
