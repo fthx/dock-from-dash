@@ -1,7 +1,7 @@
 /*
     Dock from Dash - GNOME Shell 40+ extension
     Copyright Francois Thirioux
-    GitHub contributors: @fthx, @rastersoft
+    GitHub contributors: @fthx, @rastersoft, @underlinejakez
     Some ideas picked from GNOME Shell native code
     License GPL v3
 */
@@ -315,12 +315,12 @@ class Extension {
             Main.overview.disconnect(this.overview_hiding);
         }
         if (this.toggle_dock_hover_timeout) {
-            this.toggle_dock_hover_timeout = 0;
             GLib.source_remove(this.toggle_dock_hover_timeout);
+            this.toggle_dock_hover_timeout = 0;
         }
         if (this.dock.auto_hide_dock_timeout) {
-            this.dock.auto_hide_dock_timeout = 0;
             GLib.source_remove(this.dock.auto_hide_dock_timeout);
+            this.dock.auto_hide_dock_timeout = 0;
         }
         if (this.workareas_changed) {
             global.display.disconnect(this.workareas_changed);
