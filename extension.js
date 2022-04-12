@@ -225,15 +225,15 @@ class Extension {
 
         if (!this.screen_border_box.get_hover()) {
             if (this.toggle_dock_hover_timeout) {
+                GLib.source_remove(this.toggle_dock_hover_timeout);
                 this.toggle_dock_hover_timeout = 0;
-                GLib.source_remove(this.dock.auto_hide_dock_timeout);
             }
             return;
         }
 
         if (this.dock.auto_hide_dock_timeout) {
-            this.dock.auto_hide_dock_timeout = 0;
             GLib.source_remove(this.dock.auto_hide_dock_timeout);
+            this.dock.auto_hide_dock_timeout = 0;
         }
 
         if (!Main.overview.visible && !Main.sessionMode.isLocked) {
