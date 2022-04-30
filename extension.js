@@ -1,7 +1,7 @@
 /*
     Dock from Dash - GNOME Shell 40+ extension
     Copyright Francois Thirioux
-    GitHub contributors: @fthx, @rastersoft, @underlinejakez
+    GitHub contributors: @fthx, @rastersoft, @underlinejakez, @lucaxvi
     Some ideas picked from GNOME Shell native code
     License GPL v3
 */
