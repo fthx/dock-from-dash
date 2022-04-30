@@ -166,7 +166,7 @@ class Extension {
                 this.app.open_new_window(-1);
                 Main.overview.hide();
             } else {
-                let windows = this.app.get_windows().filter(window => !window.is_override_redirect());
+                let windows = this.app.get_windows().filter(window => !window.is_override_redirect() && !window.is_attached_dialog());
                 switch (windows.length) {
                     case 0:
                         this.app.activate();
