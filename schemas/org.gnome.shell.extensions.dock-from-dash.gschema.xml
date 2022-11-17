@@ -51,5 +51,11 @@
         <description>Duration, in milliseconds, of dock hiding animation.</description>
     </key>
 
+    <key type="b" name="show-overview">
+        <default>false</default>
+        <summary>Show overview at startup</summary>
+        <description>Show the overview at startup.</description>
+    </key>
+
     </schema>
 </schemalist>
