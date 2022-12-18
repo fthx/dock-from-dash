@@ -166,25 +166,43 @@ class Extension {
                 this.app.open_new_window(-1);
                 Main.overview.hide();
             } else {
-                let windows = this.app.get_windows().filter(window => !window.is_override_redirect() && !window.is_attached_dialog());
-                switch (windows.length) {
+                let app_windows = this.app
+                    .get_windows()
+                    .filter(window => !window.is_override_redirect() && !window.is_attached_dialog())
+                    .sort((w1, w2) => w1.get_id() - w2.get_id());
+
+                switch (app_windows.length) {
                     case 0:
                         this.app.activate();
                         Main.overview.hide();
                     break;
                     case 1:
-                        if (windows[0].has_focus() && windows[0].can_minimize()) {
-                           windows[0].minimize();
+                        if (app_windows[0].has_focus() && app_windows[0].can_minimize()) {
+                            app_windows[0].minimize();
                             Main.overview.hide();
                         } else {
-                            if (!windows[0].has_focus()) {
-                                windows[0].activate(global.get_current_time());
+                            if (!app_windows[0].has_focus()) {
+                                app_windows[0].activate(global.get_current_time());
                                 Main.overview.hide();
                             }
                         }
                     break;
                     default:
-                        Main.overview.show();
+                        let app_has_focus = false;
+                        let app_focused_window_index = 0;
+                        for (var index = 0; index < app_windows.length; index++) {
+                            if (app_windows[index].has_focus()) {
+                                app_has_focus = true;
+                                app_focused_window_index = index;
+                            }
+                        }
+
+                        if (app_has_focus) {
+                            let next_index = (app_focused_window_index + 1) % app_windows.length;
+                            this.app.activate_window(app_windows[next_index], global.get_current_time());
+                        } else {
+                            this.app.activate();
+                        }
                 }
             }
         }
