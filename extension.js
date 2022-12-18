@@ -66,6 +66,12 @@ class Dock extends Dash.Dash {
         this._on_dock_hover();
     }
 
+    _queueRedisplay() {
+        try {
+            Main.queueDeferredWork(this._workId);
+        } catch (error) {}
+    }
+
     _on_dock_scroll(origin, event) {
         this.active_workspace = WorkspaceManager.get_active_workspace();
         switch(event.get_scroll_direction()) {
