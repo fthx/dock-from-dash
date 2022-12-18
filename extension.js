@@ -1,7 +1,7 @@
 /*
     Dock from Dash - GNOME Shell 40+ extension
     Copyright Francois Thirioux
-    GitHub contributors: @fthx, @rastersoft, @underlinejakez, @lucaxvi
+    GitHub contributors: @fthx, @rastersoft, @underlinejakez, @lucaxvi, @subpop
     Some ideas picked from GNOME Shell native code
     License GPL v3
 */
@@ -67,9 +67,9 @@ class Dock extends Dash.Dash {
     }
 
     _queueRedisplay() {
-        try {
+        if (Main._deferredWorkData[this._workId]) {
             Main.queueDeferredWork(this._workId);
-        } catch (error) {}
+        }
     }
 
     _on_dock_scroll(origin, event) {
@@ -138,19 +138,6 @@ class Dock extends Dash.Dash {
             },
         });
     }
-
-    _update_size() {
-        this.work_area = Main.layoutManager.getWorkAreaForMonitor(Main.layoutManager.primaryIndex);
-        if (!this.work_area) {
-            return;
-        }
-
-        this.max_dock_height = Math.round(this.work_area.height * DASH_MAX_HEIGHT_RATIO / 100);
-        this.set_width(this.work_area.width);
-        this.set_height(Math.min(this.get_preferred_height(this.work_area.width), this.max_dock_height));
-        this.setMaxSize(this.width, this.max_dock_height);
-    }
-
 });
 
 class Extension {
@@ -220,7 +207,16 @@ class Extension {
         }
         this.dock_refreshing = true;
 
-        this.dock._update_size();
+        this.dock.work_area = Main.layoutManager.getWorkAreaForMonitor(Main.layoutManager.primaryIndex);
+        if (!this.dock.work_area) {
+            return;
+        }
+
+        this.dock.max_dock_height = Math.round(this.dock.work_area.height * DASH_MAX_HEIGHT_RATIO / 100);
+        this.dock.set_width(this.dock.work_area.width);
+        this.dock.set_height(Math.min(this.dock.get_preferred_height(this.dock.work_area.width), this.dock.max_dock_height));
+        this.dock.setMaxSize(this.dock.width, this.dock.max_dock_height);
+
         if (settings.get_boolean('always-show') || this.dock.is_visible()) {
             this.dock.set_position(this.dock.work_area.x, this.dock.work_area.y + this.dock.work_area.height - this.dock.height);
         } else {
@@ -236,10 +232,17 @@ class Extension {
     }
 
     _screen_border_box_refresh() {
+        if (this.screen_border_box_refreshing || !this.dock.work_area) {
+            return;
+        }
+        this.screen_border_box_refreshing = true;
+
         this.screen_border_box.set_size(this.dock._dashContainer.width, SHOW_DOCK_BOX_HEIGHT);
         this.screen_border_box_x = this.dock.work_area.x + Math.round((this.dock.work_area.width - this.dock._dashContainer.width) / 2);
         this.screen_border_box_y = this.dock.work_area.y + this.dock.work_area.height - SHOW_DOCK_BOX_HEIGHT;
         this.screen_border_box.set_position(this.screen_border_box_x, this.screen_border_box_y);
+
+        this.screen_border_box_refreshing = false;
     }
 
     _on_screen_border_box_hover() {
@@ -357,9 +360,12 @@ class Extension {
         }
 
         Main.layoutManager.removeChrome(this.screen_border_box);
-        Main.layoutManager.removeChrome(this.dock);
         this.screen_border_box.destroy();
+
+        Main.layoutManager.removeChrome(this.dock);
+        this.dock._box.destroy();
         this.dock.destroy();
+
         settings = null;
     }
 }
