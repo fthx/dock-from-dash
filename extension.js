@@ -298,7 +298,9 @@ class Extension {
         this._create_dock();
 
         this.startup_complete = Main.layoutManager.connect('startup-complete', () => {
-            Main.overview.hide();
+            if (!settings.get_boolean('show-overview')) {
+                Main.overview.hide();
+            }
         });
     }
 

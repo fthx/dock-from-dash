@@ -49,6 +49,9 @@ function buildPrefsWidget() {
     let hideDockDuration = buildSpinButton('hide-dock-duration',_("Duration of dock hiding animation (ms)"), 0, 1000, 50);
     frame.append(hideDockDuration);
 
+    let showOverview = buildSwitcher('show-overview',_("Show overview at startup"));
+    frame.append(showOverview);
+
     frame.show();
     return frame;
 }
