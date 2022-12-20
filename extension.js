@@ -228,6 +228,8 @@ class Extension {
             this.dock._hide_dock();
         }
 
+        this._screen_border_box_refresh();
+
         this.dock_refreshing = false;
     }
 
