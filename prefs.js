@@ -31,6 +31,9 @@ function buildPrefsWidget() {
     let alwaysShow = buildSwitcher('always-show',_("Always show the dock"));
     frame.append(alwaysShow);
 
+    let hideMaximized = buildSwitcher('hide-maximized',_("Hide the dock when focused window is maximized"), 'always-show');
+    frame.append(hideMaximized);
+
     let showInFullScreen = buildSwitcher('show-in-full-screen',_("Show dock in full screen mode"));
     frame.append(showInFullScreen);
 
@@ -56,7 +59,7 @@ function buildPrefsWidget() {
     return frame;
 }
 
-function buildSwitcher(key, labelText) {
+function buildSwitcher(key, labelText, linked = null) {
     let hbox = new Gtk.Box({ orientation: Gtk.Orientation.HORIZONTAL, spacing: 10 });
     let label = new Gtk.Label({ label: labelText, xalign: 0 });
     let switcher = new Gtk.Switch({ active: settings.get_boolean(key) });
@@ -66,6 +69,9 @@ function buildSwitcher(key, labelText) {
     switcher.set_halign(Gtk.Align.END);
     settings.bind(key, switcher, 'active', 3);
 
+    if (linked != null) {
+        settings.bind(linked, switcher, 'sensitive', 3);
+    }
     hbox.append(label);
     hbox.append(switcher);
 
