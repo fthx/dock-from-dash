@@ -1,7 +1,7 @@
 /*
     Dock from Dash - GNOME Shell 40+ extension
     Copyright Francois Thirioux
-    GitHub contributors: @fthx, @rastersoft, @underlinejakez, @lucaxvi, @subpop
+    GitHub contributors: @fthx, @rastersoft, @underlinejakez, @lucaxvi, @subpop, @dgsasha
     Some ideas picked from GNOME Shell native code
     License GPL v3
 */
@@ -14,11 +14,13 @@ const ExtensionUtils = imports.misc.extensionUtils;
 const AppDisplay = imports.ui.appDisplay;
 const WorkspaceManager = global.workspace_manager;
 
+const Me = imports.misc.extensionUtils.getCurrentExtension();
+const AutoHide = Me.imports.auto_hide;
+
 var DASH_MAX_HEIGHT_RATIO = 15;
 var SHOW_DOCK_BOX_HEIGHT = 2;
 
 var settings;
-
 
 var ScreenBorderBox = GObject.registerClass(
 class ScreenBorderBox extends St.BoxLayout {
@@ -44,6 +46,7 @@ class Dock extends Dash.Dash {
         this.show();
         this.dock_animated = false;
         this.keep_dock_shown = false;
+        this.window_overlap = false;
         this.hide_override = false;
         this.visible = true;
     }
@@ -88,7 +91,7 @@ class Dock extends Dash.Dash {
     }
 
     _on_dock_hover() {
-        if (this.hide_override && !this._dashContainer.get_hover() && !this.keep_dock_shown) {
+        if ((this.hide_override || this.window_overlap) && !this._dashContainer.get_hover() && !this.keep_dock_shown) {
             this.auto_hide_dock_timeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, settings.get_int('autohide-delay'), () => {
                 if (!this._dashContainer.get_hover()) {
                     this.auto_hide_dock_timeout = 0;
@@ -99,7 +102,7 @@ class Dock extends Dash.Dash {
         }
     }
 
-    _hide_dock(animate = true) {
+    _hide_dock(animate = true, callback) {
         if (this.dock_animated || !this.visible)
             return;
 
@@ -119,6 +122,8 @@ class Dock extends Dash.Dash {
                     this.dock_animated = false;
                     this.hide();
                     this.visible = false;
+                    if (callback)
+                        callback();
                 },
             });
         } else {
@@ -128,7 +133,7 @@ class Dock extends Dash.Dash {
         }
     }
 
-    _show_dock(animate = true) {
+    _show_dock(animate = true, callback) {
         if (this.dock_animated || this.visible)
             return;
 
@@ -145,6 +150,8 @@ class Dock extends Dash.Dash {
                 onComplete: () => {
                     this.dock_animated = false;
                     this.visible = true;
+                    if (callback)
+                        callback();
                 },
             });
         } else {
@@ -167,9 +174,8 @@ class Extension {
             let isMiddleButton = button && button == Clutter.BUTTON_MIDDLE;
             let isCtrlPressed = (modifiers & Clutter.ModifierType.CONTROL_MASK) != 0;
             let openNewWindow = this.app.can_open_new_window() && this.app.state == Shell.AppState.RUNNING && (isCtrlPressed || isMiddleButton);
-            if (this.app.state == Shell.AppState.STOPPED || openNewWindow) {
+            if (this.app.state == Shell.AppState.STOPPED || openNewWindow)
                 this.animateLaunch();
-            }
             if (openNewWindow) {
                 this.app.open_new_window(-1);
                 Main.overview.hide();
@@ -249,7 +255,7 @@ class Extension {
 
         if (Main.layoutManager._startingUp || (Main.overview.visible && !Main.overview.animationInProgress))
             this.dock._hide_dock(false);
-        else if (this.dock.hide_override && !this.dock._dashContainer.get_hover())
+        else if ((this.dock.hide_override || this.dock.window_overlap) && !this.dock._dashContainer.get_hover())
             this.dock._hide_dock();
         else
             this.dock._show_dock();
@@ -268,6 +274,20 @@ class Extension {
         this.screen_border_box.set_position(this.screen_border_box_x, this.screen_border_box_y);
 
         this.screen_border_box_refreshing = false;
+    }
+
+    _update_dock_size_box() {
+        if (!this.auto_hide_enabled || !this.dock.work_area)
+            return;
+
+        let dock_size_box = new Meta.Rectangle({
+            x: this.dock.work_area.x + Math.round((this.dock.work_area.width - this.dock._background.width) / 2),
+            y: this.dock.work_area.y + this.dock.work_area.height - this.dock.get_height(),
+            width: this.dock._background.width,
+            height: this.dock.get_height()
+        });
+
+        this.auto_hide.update_target_dock_size_box(dock_size_box);
     }
 
     _on_screen_border_box_hover() {
@@ -306,7 +326,7 @@ class Extension {
             return;
 
         let window = global.display.get_focus_window();
-        let hide_maximized = (settings.get_boolean('hide-maximized'));
+        let hide_maximized = (settings.get_int('hide') !== 0);
 
         let old_hide_override = this.dock.hide_override;
 
@@ -321,29 +341,71 @@ class Extension {
             this._dock_refresh_visibility();
     }
 
+    _on_overlap_update() {
+        if (!this.auto_hide_enabled)
+            return;
+
+        if (this._on_overlap_updating)
+            return;
+
+        this._on_overlap_updating = true;
+
+        this.dock.window_overlap = this.auto_hide.get_status();
+
+        if (this.dock.window_overlap)
+            this.dock._hide_dock(true, () => {
+                // prevent dock from getting stuck if window is moved out of the way quickly
+                if (!this.auto_hide.get_status()) {
+                    this.dock.window_overlap = this.auto_hide.get_status();
+                    this.dock._show_dock();
+                }
+            });
+        else
+            this._dock_refresh_visibility();
+
+        this._on_overlap_updating = false;
+    }
+
     _on_overview_shown() {
         this.dock._hide_dock(false);
         this.screen_border_box.hide();
     }
 
     _on_overview_hiding() {
-        if (!this.dock.hide_override || this.dock._dashContainer.get_hover())
+        if ((!this.dock.hide_override && !this.dock.window_overlap) || this.dock._dashContainer.get_hover())
             this.dock._show_dock(false);
         this.screen_border_box.show();
     }
 
-    _on_settings_changed() {
-        this.dock._background.set_opacity(Math.round(settings.get_int('background-opacity') / 100 * 255));
-        this.dock.set_opacity(Math.round(settings.get_int('icons-opacity') / 100 * 255));
+    _on_hide_changed() {
+        this.auto_hide_enabled = (settings.get_boolean('always-show') && settings.get_int('hide') == 2);
+
+        if (this.auto_hide.enabled && !this.auto_hide_enabled) {
+            this.auto_hide.disable();
+            this.dock.window_overlap = false;
+        } else if (!this.auto_hide.enabled && this.auto_hide_enabled)
+            this._enable_auto_hide();
+        
         this._dock_refresh();
+    }
+
+    _on_background_opacity_changed() {
+        this.dock._background.set_opacity(Math.round(settings.get_int('background-opacity') / 100 * 255));
+    }
+
+    _on_icons_opacity_changed() {
+        this.dock.set_opacity(Math.round(settings.get_int('icons-opacity') / 100 * 255));
     }
 
     _create_dock() {
         this.dock = new Dock();
         this.screen_border_box = new ScreenBorderBox();
 
+        this.auto_hide = new AutoHide.AutoHide();
+
         this.dock._box.connect('notify::position', this._screen_border_box_refresh.bind(this));
         this.dock._box.connect('notify::size', this._screen_border_box_refresh.bind(this));
+        this.dock._background.connect('notify::size', this._update_dock_size_box.bind(this));
         this._dock_refresh();
 
         this.screen_border_box.connect('notify::hover', this._on_screen_border_box_hover.bind(this));
@@ -362,12 +424,28 @@ class Extension {
         this.size_changed = global.window_manager.connect_after('size-changed', this._update_hide_override.bind(this));
     }
 
+    _enable_auto_hide() {
+        this._update_dock_size_box();
+
+        this.status_changed = this.auto_hide.connect('status-changed', this._on_overlap_update.bind(this));
+
+        this.auto_hide.enable();
+    }
+
     enable() {
         settings = ExtensionUtils.getSettings('org.gnome.shell.extensions.dock-from-dash')
-        this.settings_changed = settings.connect('changed', this._on_settings_changed.bind(this));
+        this.always_show_setting_changed = settings.connect('changed::always-show', this._on_hide_changed.bind(this));
+        this.hide_setting_changed = settings.connect('changed::hide', this._on_hide_changed.bind(this));
+        this.background_opacity_changed = settings.connect('changed::background-opacity', this._on_background_opacity_changed.bind(this));
+        this.icons_opacity_changed = settings.connect('changed::icons-opacity', this._on_icons_opacity_changed.bind(this));
 
         this._modify_native_click_behavior();
         this._create_dock();
+
+        this.auto_hide_enabled = (settings.get_boolean('always-show') && settings.get_int('hide') == 2);
+
+        if (this.auto_hide_enabled)
+            this._enable_auto_hide();
 
         this.startup_complete = Main.layoutManager.connect('startup-complete', () => {
             // show the dock once after startup so it can be used, and then hide it immediately if overview is visible
@@ -386,9 +464,21 @@ class Extension {
     disable() {
         AppDisplay.AppIcon.prototype.activate = this.original_click_function;
 
-        if (this.settings_changed) {
-            settings.disconnect(this.settings_changed);
-            this.settings_changed = null;
+        if (this.always_show_setting_changed) {
+            settings.disconnect(this.always_show_setting_changed);
+            this.always_show_setting_changed = null;
+        }
+        if (this.hide_setting_changed) {
+            settings.disconnect(this.hide_setting_changed);
+            this.hide_setting_changed = null;
+        }
+        if (this.background_opacity_changed) {
+            settings.disconnect(this.background_opacity_changed);
+            this.background_opacity_changed = null;
+        }
+        if (this.icons_opacity_changed) {
+            settings.disconnect(this.icons_opacity_changed);
+            this.icons_opacity_changed = null;
         }
         if (this.overview_shown) {
             Main.overview.disconnect(this.overview_shown);
@@ -430,9 +520,15 @@ class Extension {
             Main.layoutManager.disconnect(this.startup_complete);
             this.startup_complete = null;
         }
-
+        if (this.status_changed) {
+            this.auto_hide.disconnect(this.status_changed);
+            this.status_changed = null;
+        }
         Main.layoutManager.removeChrome(this.screen_border_box);
         this.screen_border_box.destroy();
+
+        this.auto_hide.disable();
+        this.auto_hide = null;
 
         Main.layoutManager.removeChrome(this.dock);
         this.dock._box.destroy();

@@ -9,10 +9,10 @@
         <description>Keep the dock always visible.</description>
     </key>
 
-    <key type="b" name="hide-maximized">
-        <default>true</default>
-        <summary>Hide the dock when focused window is maximized</summary>
-        <description>When the focused window is maximized, the dock will be hidden.</description>
+    <key type="i" name="hide">
+        <default>1</default>
+        <summary>When to hide the dock</summary>
+        <description>0: never, 1: When window is maximized, 2: When window overlaps dock.</description>
     </key>
 
     <key type="b" name="show-in-full-screen">

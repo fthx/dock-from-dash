@@ -6,6 +6,7 @@ const GLib = imports.gi.GLib;
 const ExtensionUtils = imports.misc.extensionUtils;
 const Gio = imports.gi.Gio;
 const Gettext = imports.gettext;
+const GObject = imports.gi.GObject;
 
 var _ = Gettext.domain("dock-from-dash").gettext
 Gettext.bindtextdomain("dock-from-dash", ExtensionUtils.getCurrentExtension().path + "/locale");
@@ -31,8 +32,8 @@ function buildPrefsWidget() {
     let alwaysShow = buildSwitcher('always-show',_("Always show the dock"));
     frame.append(alwaysShow);
 
-    let hideMaximized = buildSwitcher('hide-maximized',_("Hide the dock when focused window is maximized"), 'always-show');
-    frame.append(hideMaximized);
+    let hide = buildDropDown('hide',_("When to hide the dock"), ['Never', 'Maximized Window', 'Auto Hide'], 'always-show');
+    frame.append(hide);
 
     let showInFullScreen = buildSwitcher('show-in-full-screen',_("Show dock in full screen mode"));
     frame.append(showInFullScreen);
@@ -59,7 +60,7 @@ function buildPrefsWidget() {
     return frame;
 }
 
-function buildSwitcher(key, labelText, linked = null) {
+function buildSwitcher(key, labelText) {
     let hbox = new Gtk.Box({ orientation: Gtk.Orientation.HORIZONTAL, spacing: 10 });
     let label = new Gtk.Label({ label: labelText, xalign: 0 });
     let switcher = new Gtk.Switch({ active: settings.get_boolean(key) });
@@ -69,11 +70,28 @@ function buildSwitcher(key, labelText, linked = null) {
     switcher.set_halign(Gtk.Align.END);
     settings.bind(key, switcher, 'active', 3);
 
-    if (linked != null) {
-        settings.bind(linked, switcher, 'sensitive', 3);
-    }
     hbox.append(label);
     hbox.append(switcher);
+
+    return hbox;
+}
+
+function buildDropDown(key, labelText, options, depends = null) {
+    let hbox = new Gtk.Box({ orientation: Gtk.Orientation.HORIZONTAL, spacing: 10 });
+    let label = new Gtk.Label({ label: labelText, xalign: 0 });
+    let drop_down = Gtk.DropDown.new_from_strings(options);
+
+    label.set_hexpand(true);
+    drop_down.set_hexpand(false);
+    drop_down.set_halign(Gtk.Align.END);
+    drop_down.selected = settings.get_int(key);
+    settings.bind(key, drop_down, 'selected', 3);
+
+    if (depends !== null)
+        settings.bind(depends, drop_down, 'sensitive', 3);
+
+    hbox.append(label);
+    hbox.append(drop_down);
 
     return hbox;
 }
