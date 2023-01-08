@@ -13,6 +13,8 @@ const Dash = imports.ui.dash;
 const ExtensionUtils = imports.misc.extensionUtils;
 const AppDisplay = imports.ui.appDisplay;
 const WorkspaceManager = global.workspace_manager;
+const AppFavorites = imports.ui.appFavorites;
+const Layout = imports.ui.layout;
 
 const Me = imports.misc.extensionUtils.getCurrentExtension();
 const AutoHide = Me.imports.auto_hide;
@@ -242,7 +244,7 @@ class Extension {
             this.dock.set_position(this.dock.work_area.x, this.dock.work_area.y + this.dock.work_area.height);
 
         this._update_hide_override();
-        this._screen_border_box_refresh();
+        this._border_refresh();
 
         this.dock_refreshing = false;
     }
@@ -263,17 +265,38 @@ class Extension {
         this.dock_refreshing_visibility = false;
     }
 
-    _screen_border_box_refresh() {
-        if (this.screen_border_box_refreshing || !this.dock.work_area)
+    _border_refresh() {
+        if (this.border_refreshing || !this.dock.work_area)
             return;
-        this.screen_border_box_refreshing = true;
 
-        this.screen_border_box.set_size(this.dock._dashContainer.width, SHOW_DOCK_BOX_HEIGHT);
-        this.screen_border_box_x = this.dock.work_area.x + Math.round((this.dock.work_area.width - this.dock._dashContainer.width) / 2);
-        this.screen_border_box_y = this.dock.work_area.y + this.dock.work_area.height - SHOW_DOCK_BOX_HEIGHT;
-        this.screen_border_box.set_position(this.screen_border_box_x, this.screen_border_box_y);
+        this.border_refreshing = true;
 
-        this.screen_border_box_refreshing = false;
+        if (this._pressure_barrier) {
+            this._remove_barrier();
+
+            let x1 = this.dock.work_area.x + Math.round((this.dock.work_area.width - this.dock._dashContainer.width) / 2);
+            let x2 = x1 + this.dock._dashContainer.width;
+            let y1 = this.dock.work_area.y + this.dock.work_area.height;
+            let y2 = y1;
+    
+            this._bottom_barrier = new Meta.Barrier({
+                display: global.display,
+                x1: x1,
+                x2: x2,
+                y1: y1,
+                y2: y2,
+                directions: Meta.BarrierDirection.NEGATIVE_Y
+            });
+    
+            this._pressure_barrier.addBarrier(this._bottom_barrier);
+        } else if (this.screen_border_box) {
+            this.screen_border_box.set_size(this.dock._dashContainer.width, SHOW_DOCK_BOX_HEIGHT);
+            this.screen_border_box_x = this.dock.work_area.x + Math.round((this.dock.work_area.width - this.dock._dashContainer.width) / 2);
+            this.screen_border_box_y = this.dock.work_area.y + this.dock.work_area.height - SHOW_DOCK_BOX_HEIGHT;
+            this.screen_border_box.set_position(this.screen_border_box_x, this.screen_border_box_y);    
+        }
+
+        this.border_refreshing = false;
     }
 
     _update_dock_size_box() {
@@ -290,17 +313,9 @@ class Extension {
         this.auto_hide.update_target_dock_size_box(dock_size_box);
     }
 
-    _on_screen_border_box_hover() {
-        if (this.dock.visible)
+    _on_border_hover() {
+        if (this.dock.visible || (!this._pressure_barrier && !this.screen_border_box))
             return;
-
-        if (!this.screen_border_box.get_hover()) {
-            if (this.toggle_dock_hover_timeout) {
-                GLib.source_remove(this.toggle_dock_hover_timeout);
-                this.toggle_dock_hover_timeout = 0;
-            }
-            return;
-        }
 
         if (this.dock.auto_hide_dock_timeout) {
             GLib.source_remove(this.dock.auto_hide_dock_timeout);
@@ -310,10 +325,12 @@ class Extension {
         if (!Main.overview.visible && !Main.sessionMode.isLocked) {
             if (this.toggle_dock_hover_timeout)
                 return;
+
             this.toggle_dock_hover_timeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, settings.get_int('toggle-delay'), () => {
                 if (settings.get_boolean('show-in-full-screen') || !global.display.get_focus_window() || !global.display.get_focus_window().is_fullscreen()) {
-                    if (this.screen_border_box.get_hover())
-                        this.dock._show_dock();
+                    this.dock._show_dock();
+                    if (!this.dock._dashContainer.get_hover())
+                        this.dock._hide_dock();
                 }
                 this.toggle_dock_hover_timeout = 0;
                 return false;
@@ -368,13 +385,19 @@ class Extension {
 
     _on_overview_shown() {
         this.dock._hide_dock(false);
-        this.screen_border_box.hide();
     }
 
     _on_overview_hiding() {
         if ((!this.dock.hide_override && !this.dock.window_overlap) || this.dock._dashContainer.get_hover())
             this.dock._show_dock(false);
-        this.screen_border_box.show();
+    }
+
+    _on_pressure_threshold_changed() {
+        if (this._pressure_barrier) {
+            this._destroy_pressure_barrier();
+            this._create_pressure_barrier();
+            this._border_refresh();
+        }
     }
 
     _on_hide_changed() {
@@ -397,20 +420,73 @@ class Extension {
         this.dock.set_opacity(Math.round(settings.get_int('icons-opacity') / 100 * 255));
     }
 
+    _remove_barrier() {
+        if (!this._bottom_barrier)
+            return;
+        if (this._pressure_barrier)
+            this._pressure_barrier.removeBarrier(this._bottom_barrier);
+        this._bottom_barrier.destroy();
+        this._bottom_barrier = null;
+    }
+
+    _create_pressure_barrier() {
+        if (this._pressure_barrier)
+            return;
+
+        this._pressure_barrier = new Layout.PressureBarrier(settings.get_int('pressure-threshold'), 1000, Shell.ActionMode.NORMAL);
+        this._pressure_barrier.connect('trigger', this._on_border_hover.bind(this));
+    }
+
+    _create_screen_border_box() {
+        if (this.screen_border_box)
+            return;
+
+        this.screen_border_box = new ScreenBorderBox();
+        this.screen_border_box.connect('notify::hover', this._on_border_hover.bind(this));
+        this.screen_border_box.connect('scroll-event', this.dock._on_dock_scroll.bind(this.dock));
+    }
+
+    _destroy_pressure_barrier() {
+        this._remove_barrier();
+        if (this._pressure_barrier) {
+            this._pressure_barrier.destroy();
+            this._pressure_barrier = null;
+        }
+    }
+
+    _destroy_screen_border_box() {
+        if (!this.screen_border_box)
+            return;
+
+        Main.layoutManager.removeChrome(this.screen_border_box);
+        this.screen_border_box.destroy();
+        this.screen_border_box = null;
+    }
+
+    _create_border() {
+        if (global.display.supports_extended_barriers() && settings.get_boolean('use-pressure')) {
+            this._destroy_screen_border_box();
+            this._create_pressure_barrier();
+        } else {
+            this._destroy_pressure_barrier();
+            this._create_screen_border_box();
+        }
+        this._border_refresh();
+    }
+
     _create_dock() {
         this.dock = new Dock();
-        this.screen_border_box = new ScreenBorderBox();
 
         this.auto_hide = new AutoHide.AutoHide();
 
-        this.dock._box.connect('notify::position', this._screen_border_box_refresh.bind(this));
-        this.dock._box.connect('notify::size', this._screen_border_box_refresh.bind(this));
+        this._create_border();
+
+        this.dock._box.connect('notify::position', this._border_refresh.bind(this));
+        this.dock._box.connect('notify::size', this._border_refresh.bind(this));
         this.dock._background.connect('notify::size', this._update_dock_size_box.bind(this));
         this._dock_refresh();
 
-        this.screen_border_box.connect('notify::hover', this._on_screen_border_box_hover.bind(this));
         this.dock._dashContainer.connect('notify::hover', this.dock._on_dock_hover.bind(this.dock));
-        this.screen_border_box.connect('scroll-event', this.dock._on_dock_scroll.bind(this.dock));
         this.dock._dashContainer.connect('scroll-event', this.dock._on_dock_scroll.bind(this.dock));
         this.dock.showAppsButton.connect('button-release-event', () => Main.overview.showApps());
 
@@ -436,6 +512,8 @@ class Extension {
         settings = ExtensionUtils.getSettings('org.gnome.shell.extensions.dock-from-dash')
         this.always_show_setting_changed = settings.connect('changed::always-show', this._on_hide_changed.bind(this));
         this.hide_setting_changed = settings.connect('changed::hide', this._on_hide_changed.bind(this));
+        this.use_pressure_setting_changed = settings.connect('changed::use-pressure', this._create_border.bind(this));
+        this.threshold_setting_changed = settings.connect('changed::pressure-threshold', this._on_pressure_threshold_changed.bind(this));
         this.background_opacity_changed = settings.connect('changed::background-opacity', this._on_background_opacity_changed.bind(this));
         this.icons_opacity_changed = settings.connect('changed::icons-opacity', this._on_icons_opacity_changed.bind(this));
 
@@ -452,7 +530,9 @@ class Extension {
             this.dock._show_dock(false);
             if (Main.overview.visible || !settings.get_boolean('always-show'))
                 this.dock._hide_dock(false);
-    
+
+            this._border_refresh();
+
             // initially set the dock height equal to dash height
             this.dock.set_height(Main.overview._overview._controls.dash.get_height());
 
@@ -471,6 +551,14 @@ class Extension {
         if (this.hide_setting_changed) {
             settings.disconnect(this.hide_setting_changed);
             this.hide_setting_changed = null;
+        }
+        if (this.use_pressure_setting_changed) {
+            settings.disconnect(this.use_pressure_setting_changed);
+            this.use_pressure_setting_changed = null;
+        }
+        if (this.threshold_setting_changed) {
+            settings.disconnect(this.threshold_setting_changed);
+            this.threshold_setting_changed = null;
         }
         if (this.background_opacity_changed) {
             settings.disconnect(this.background_opacity_changed);
@@ -524,8 +612,9 @@ class Extension {
             this.auto_hide.disconnect(this.status_changed);
             this.status_changed = null;
         }
-        Main.layoutManager.removeChrome(this.screen_border_box);
-        this.screen_border_box.destroy();
+
+        this._destroy_pressure_barrier();
+        this._destroy_screen_border_box();
 
         this.auto_hide.disable();
         this.auto_hide = null;

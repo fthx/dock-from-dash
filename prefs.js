@@ -50,6 +50,12 @@ function buildPrefsWidget() {
     let toggleDelay = buildSpinButton('toggle-delay',_("Delay for dock showing (ms)"), 0, 1000, 50);
     frame.append(toggleDelay);
 
+    let usePressure = buildSwitcher('use-pressure',_("Require pressure to show the dock"));
+    frame.append(usePressure);
+
+    let pressureThreshold = buildSpinButton('pressure-threshold',_("Pressure threshold for dock showing"), 0, 1000, 50, 'use-pressure');
+    frame.append(pressureThreshold);
+
     let showDockDuration = buildSpinButton('show-dock-duration',_("Duration of dock showing animation (ms)"), 0, 1000, 50);
     frame.append(showDockDuration);
 
@@ -96,7 +102,7 @@ function buildDropDown(key, labelText, options, depends = null) {
     return hbox;
 }
 
-function buildSpinButton(key, labeltext, minval, maxval, step_increment) {
+function buildSpinButton(key, labeltext, minval, maxval, step_increment, depends = null) {
     let hbox = new Gtk.Box({orientation: Gtk.Orientation.HORIZONTAL, spacing: 10 });
     let label = new Gtk.Label({label: labeltext, xalign: 0 });
     let adjust = new Gtk.Adjustment({lower: minval, upper: maxval, value: settings.get_int(key), step_increment: step_increment});
@@ -106,6 +112,9 @@ function buildSpinButton(key, labeltext, minval, maxval, step_increment) {
     spin.set_hexpand(false);
     spin.set_halign(Gtk.Align.END);
     settings.bind(key, adjust, 'value', 3);
+
+    if (depends !== null)
+        settings.bind(depends, spin, 'sensitive', 3);
 
     hbox.append(label);
     hbox.append(spin);

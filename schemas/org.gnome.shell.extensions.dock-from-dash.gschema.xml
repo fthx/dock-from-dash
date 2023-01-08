@@ -45,6 +45,18 @@
         <description>Delay, in milliseconds, before the dock shows after the cursor reaches the bottom of the screen.</description>
     </key>
 
+    <key type="b" name="use-pressure">
+        <default>true</default>
+        <summary>Require pressure to show the dock</summary>
+        <description>Requires the mouse to be moved off of the screen to show dock.</description>
+    </key>
+
+    <key type="i" name="pressure-threshold">
+        <default>100</default>
+        <summary>Dock pressure threshold</summary>
+        <description>The amount of pressure, in pixels, required to show the dock.</description>
+    </key>
+
     <key type="i" name="show-dock-duration">
         <default>100</default>
         <summary>Show dock animation duration</summary>
