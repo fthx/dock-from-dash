@@ -18,6 +18,9 @@ const Layout = imports.ui.layout;
 
 const Me = imports.misc.extensionUtils.getCurrentExtension();
 const AutoHide = Me.imports.auto_hide;
+const DesktopIconsIntegration = Me.imports.desktopIconsIntegration;
+
+const IGNORED_APPS = [ 'com.rastersoft.ding', 'com.desktop.ding' ];
 
 var DASH_MAX_HEIGHT_RATIO = 15;
 var SHOW_DOCK_BOX_HEIGHT = 2;
@@ -396,6 +399,11 @@ class Extension {
         else
             this.dock.set_position(this.dock.work_area.x, this.dock.work_area.y + this.dock.work_area.height);
 
+        if (settings.get_boolean('always-show')) {
+            this.ding.resetMargins();
+            this.ding.setMargins(Main.layoutManager.primaryIndex, 0, this.dock.get_height(), 0, 0);
+        }
+
         this._update_hide_override();
         this._border_refresh();
 
@@ -502,6 +510,8 @@ class Extension {
 
         if (!settings.get_boolean('always-show'))
             this.dock.hide_override = true;
+        else if (window && IGNORED_APPS.includes(window.get_gtk_application_id()) && window.skip_taskbar)
+            this.dock.hide_override = false;
         else if (window && hide_maximized && window.get_monitor() == Main.layoutManager.primaryIndex && window.maximized_vertically)
             this.dock.hide_override = true;
         else
@@ -631,6 +641,7 @@ class Extension {
         this.dock = new Dock();
 
         this.auto_hide = new AutoHide.AutoHide();
+        this.ding = new DesktopIconsIntegration.DesktopIconsUsableAreaClass();
 
         this._create_border();
 
@@ -768,6 +779,9 @@ class Extension {
 
         this._destroy_pressure_barrier();
         this._destroy_screen_border_box();
+
+        this.ding.destroy();
+        this.ding = null;
 
         this.auto_hide.disable();
         this.auto_hide = null;
