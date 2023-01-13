@@ -640,6 +640,8 @@ class Extension {
     _create_dock() {
         this.dock = new Dock();
 
+        Main.layoutManager.uiGroup.set_child_below_sibling(this.dock, Main.layoutManager.modalDialogGroup);
+
         this.auto_hide = new AutoHide.AutoHide();
         this.ding = new DesktopIconsIntegration.DesktopIconsUsableAreaClass();
 
