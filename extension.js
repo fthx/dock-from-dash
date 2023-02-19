@@ -15,7 +15,7 @@ const AppDisplay = imports.ui.appDisplay;
 const WorkspaceManager = global.workspace_manager;
 
 var DASH_MAX_HEIGHT_RATIO = 15;
-var SHOW_DOCK_BOX_HEIGHT = 2;
+var SHOW_DOCK_BOX_HEIGHT = 20;
 
 var settings;
 
