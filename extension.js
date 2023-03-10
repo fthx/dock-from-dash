@@ -504,6 +504,7 @@ class Extension {
             return;
 
         let window = global.display.get_focus_window();
+
         let hide_maximized = (settings.get_int('hide') !== 0);
 
         let old_hide_override = this.dock.hide_override;
@@ -646,6 +647,7 @@ class Extension {
         this.ding = new DesktopIconsIntegration.DesktopIconsUsableAreaClass();
 
         this._create_border();
+        this._tracker = Shell.WindowTracker.get_default()
 
         this.dock._box.connect('notify::position', this._border_refresh.bind(this));
         this.dock._box.connect('notify::size', this._border_refresh.bind(this));
@@ -661,8 +663,8 @@ class Extension {
 
         this.monitors_changed = Main.layoutManager.connect('monitors-changed', this._dock_refresh.bind(this));
         this.workareas_changed = global.display.connect_after('workareas-changed', this._dock_refresh.bind(this));
-        this.window_created = global.display.connect_after('window-created', this._update_hide_override.bind(this));
         this.restacked = global.display.connect_after('restacked', this._update_hide_override.bind(this));
+        this.focus = this._tracker.connect_after('notify::focus-app', this._update_hide_override.bind(this));
         this.size_changed = global.window_manager.connect_after('size-changed', this._update_hide_override.bind(this));
     }
 
@@ -758,9 +760,9 @@ class Extension {
             Main.layoutManager.disconnect(this.monitors_changed);
             this.monitors_changed = null;
         }
-        if (this.window_created) {
-            global.display.disconnect(this.window_created);
-            this.window_created = null;
+        if (this.focus) {
+            this._tracker.disconnect(this.focus);
+            this.focus = null;
         }
         if (this.restacked) {
             global.display.disconnect(this.restacked);
