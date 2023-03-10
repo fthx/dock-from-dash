@@ -49,11 +49,21 @@ class Dock extends Dash.Dash {
         this._dashContainer.set_track_hover(true);
         this._dashContainer.set_reactive(true);
         this.show();
+        this.dragging = false;
         this.dock_animated = false;
         this.keep_dock_shown = false;
         this.window_overlap = false;
         this.hide_override = false;
         this.visible = true;
+    }
+
+    begin_item_drag() {
+        this.dragging = true;
+    }
+
+    end_item_drag() {
+        this.dragging = false;
+        this._on_dock_hover();
     }
 
     _itemMenuStateChanged(item, opened) {
@@ -247,9 +257,9 @@ class Dock extends Dash.Dash {
     }
 
     _on_dock_hover() {
-        if ((this.hide_override || this.window_overlap) && !this._dashContainer.get_hover() && !this.keep_dock_shown) {
+        if ((this.hide_override || this.window_overlap) && (!this._dashContainer.get_hover() && !this.dragging) && !this.keep_dock_shown) {
             this.auto_hide_dock_timeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, settings.get_int('autohide-delay'), () => {
-                if (!this._dashContainer.get_hover()) {
+                if (!this._dashContainer.get_hover() && !this.dragging) {
                     this.auto_hide_dock_timeout = 0;
                     let should_animate = (!Main.overview.animationInProgress && !Main.overview.visible)
                     this._hide_dock(should_animate);
@@ -416,7 +426,7 @@ class Extension {
 
         if (Main.layoutManager._startingUp || (Main.overview.visible && !Main.overview.animationInProgress))
             this.dock._hide_dock(false);
-        else if ((this.dock.hide_override || this.dock.window_overlap) && !this.dock._dashContainer.get_hover())
+        else if ((this.dock.hide_override || this.dock.window_overlap) && (!this.dock._dashContainer.get_hover() && !this.dock.dragging))
             this.dock._hide_dock();
         else
             this.dock._show_dock();
@@ -488,7 +498,7 @@ class Extension {
             this.toggle_dock_hover_timeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, settings.get_int('toggle-delay'), () => {
                 if (settings.get_boolean('show-in-full-screen') || !global.display.get_focus_window() || !global.display.get_focus_window().is_fullscreen()) {
                     this.dock._show_dock();
-                    if (!this.dock._dashContainer.get_hover())
+                    if (!this.dock._dashContainer.get_hover() && !this.dock.dragging)
                         this.dock._hide_dock();
                 }
                 this.toggle_dock_hover_timeout = 0;
@@ -550,7 +560,7 @@ class Extension {
     }
 
     _on_overview_hiding() {
-        if ((!this.dock.hide_override && !this.dock.window_overlap) || this.dock._dashContainer.get_hover())
+        if ((!this.dock.hide_override && !this.dock.window_overlap) || (this.dock._dashContainer.get_hover() || this.dock.dragging))
             this.dock._show_dock(false);
     }
 
@@ -658,6 +668,8 @@ class Extension {
 
         this.overview_shown = Main.overview.connect('shown', this._on_overview_shown.bind(this));
         this.overview_hiding = Main.overview.connect('hiding', this._on_overview_hiding.bind(this));
+        this.item_drag_begin = Main.overview.connect('item-drag-begin', this.dock.begin_item_drag.bind(this.dock));
+        this.item_drag_end = Main.overview.connect('item-drag-end', this.dock.end_item_drag.bind(this.dock));
 
         this.monitors_changed = Main.layoutManager.connect('monitors-changed', this._dock_refresh.bind(this));
         this.workareas_changed = global.display.connect_after('workareas-changed', this._dock_refresh.bind(this));
@@ -733,6 +745,14 @@ class Extension {
         if (this.icons_opacity_changed) {
             settings.disconnect(this.icons_opacity_changed);
             this.icons_opacity_changed = null;
+        }
+        if (this.item_drag_begin) {
+            Main.overview.disconnect(this.item_drag_begin);
+            this.item_drag_begin = null;
+        }
+        if (this.item_drag_end) {
+            Main.overview.disconnect(this.item_drag_end);
+            this.item_drag_end = null;
         }
         if (this.overview_shown) {
             Main.overview.disconnect(this.overview_shown);
