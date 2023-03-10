@@ -188,10 +188,8 @@ class Dock extends Dash.Dash {
             let item = removedActors[i];
 
             // Don't animate item removal when the overview is transitioning
-            if (!Main.overview.visible && !Main.overview.animationInProgress) // this was changed to only show animations outside overview
+            if (!Main.overview.visible || Main.overview.animationInProgress) // this was changed to only show animations outside overview
                 item.animateOutAndDestroy();
-            else
-                item.destroy();
         }
 
         this._adjustIconSize();
@@ -199,8 +197,8 @@ class Dock extends Dash.Dash {
         // Skip animations on first run when adding the initial set
         // of items, to avoid all items zooming in at once
 
-        let animate = !Main.overview.visible && this._shownInitially &&
-            !Main.overview.animationInProgress; // this was changed to only show animations outside overview
+        let animate = this._shownInitially &&
+            (!Main.overview.visible || Main.overview.animationInProgress); // this was changed to only show animations outside overview
 
         if (!this._shownInitially)
             this._shownInitially = true;
