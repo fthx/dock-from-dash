@@ -287,7 +287,6 @@ class Dock extends Dash.Dash {
                 onComplete: () => {
                     this.dock_animated = false;
                     this.hide();
-                    this.visible = false;
                     if (callback)
                         callback();
                 },
@@ -295,7 +294,6 @@ class Dock extends Dash.Dash {
         } else {
             this.set_position(this.work_area.x, this.work_area.y + this.work_area.height);
             this.hide();
-            this.visible = false;
         }
     }
 
@@ -315,7 +313,6 @@ class Dock extends Dash.Dash {
                 mode: Clutter.AnimationMode.EASE_OUT_QUAD,
                 onComplete: () => {
                     this.dock_animated = false;
-                    this.visible = true;
                     if (callback)
                         callback();
                 },
@@ -323,7 +320,6 @@ class Dock extends Dash.Dash {
         } else {
             this.set_position(this.work_area.x, this.work_area.y + this.work_area.height - this.get_height());
             this.show();
-            this.visible = true;
         }
     }
 });
@@ -497,9 +493,11 @@ class Extension {
 
             this.toggle_dock_hover_timeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, settings.get_int('toggle-delay'), () => {
                 if (settings.get_boolean('show-in-full-screen') || !global.display.get_focus_window() || !global.display.get_focus_window().is_fullscreen()) {
-                    this.dock._show_dock();
-                    if (!this.dock._dashContainer.get_hover() && !this.dock.dragging)
-                        this.dock._hide_dock();
+                    this.dock._show_dock(true, () => {
+                        // prevent dock from getting stuck if mouse is moved too quickly
+                        if (!this.dock._dashContainer.get_hover() && !this.dock.dragging)
+                            this.dock._hide_dock();
+                    });
                 }
                 this.toggle_dock_hover_timeout = 0;
                 return false;
@@ -672,10 +670,10 @@ class Extension {
         this.item_drag_end = Main.overview.connect('item-drag-end', this.dock.end_item_drag.bind(this.dock));
 
         this.monitors_changed = Main.layoutManager.connect('monitors-changed', this._dock_refresh.bind(this));
-        this.workareas_changed = global.display.connect_after('workareas-changed', this._dock_refresh.bind(this));
-        this.restacked = global.display.connect_after('restacked', this._update_hide_override.bind(this));
-        this.focus = this._tracker.connect_after('notify::focus-app', this._update_hide_override.bind(this));
-        this.size_changed = global.window_manager.connect_after('size-changed', this._update_hide_override.bind(this));
+        this.workareas_changed = global.display.connect('workareas-changed', this._dock_refresh.bind(this));
+        this.restacked = global.display.connect('restacked', this._update_hide_override.bind(this));
+        this.focus = this._tracker.connect('notify::focus-app', this._update_hide_override.bind(this));
+        this.size_changed = global.window_manager.connect('size-changed', this._update_hide_override.bind(this));
     }
 
     _enable_auto_hide() {
