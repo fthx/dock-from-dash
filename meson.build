@@ -13,6 +13,8 @@ schema_dir = join_paths(extensions_dir, 'schemas')
 
 install_data([
     'extension.js',
+    'desktopIconsIntegration.js',
+    'auto_hide.js',
     'metadata.json',
     'prefs.js'
   ],

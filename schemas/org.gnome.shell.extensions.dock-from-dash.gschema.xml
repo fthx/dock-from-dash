@@ -9,6 +9,12 @@
         <description>Keep the dock always visible.</description>
     </key>
 
+    <key type="i" name="hide">
+        <default>1</default>
+        <summary>When to hide the dock</summary>
+        <description>0: never, 1: When window is maximized, 2: When window overlaps dock.</description>
+    </key>
+
     <key type="b" name="show-in-full-screen">
         <default>false</default>
         <summary>Show dock in full screen</summary>
@@ -37,6 +43,18 @@
         <default>150</default>
         <summary>Dock toggle delay</summary>
         <description>Delay, in milliseconds, before the dock shows after the cursor reaches the bottom of the screen.</description>
+    </key>
+
+    <key type="b" name="use-pressure">
+        <default>true</default>
+        <summary>Require pressure to show the dock</summary>
+        <description>Requires the mouse to be moved off of the screen to show dock.</description>
+    </key>
+
+    <key type="i" name="pressure-threshold">
+        <default>100</default>
+        <summary>Dock pressure threshold</summary>
+        <description>The amount of pressure, in pixels, required to show the dock.</description>
     </key>
 
     <key type="i" name="show-dock-duration">
