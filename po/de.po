@@ -1,55 +1,54 @@
-# Dutch translations for dock-from-dash package.
-# Copyright (C) 2022 THE dock-from-dash'S COPYRIGHT HOLDER
+# German translations for dock-from-dash package.
+# Copyright (C) 2023 THE dock-from-dash'S COPYRIGHT HOLDER
 # This file is distributed under the same license as the dock-from-dash package.
-# Automatically generated, 2022.
+# Automatically generated, 2023.
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: dock-from-dash\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2023-04-17 15:48+0000\n"
-"PO-Revision-Date: 2022-06-27 14:31+0200\n"
-"Last-Translator: Philip Goto <philip.goto@gmail.com>\n"
-"Language-Team: Dutch <gnome-nl-list@gnome.org>\n"
-"Language: nl\n"
+"PO-Revision-Date: 2023-04-17 15:48+0000\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"Language: de\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=ASCII\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"X-Generator: Poedit 3.1\n"
 
 #: prefs.js:28
 msgid "Show overview at startup"
-msgstr ""
+msgstr "Übersicht beim Starten anzeigen"
 
 #: prefs.js:31
 msgid "Always show the dock"
-msgstr "Dock altijd weergeven"
+msgstr "Das Dock immer anzeigen"
 
 #: prefs.js:34
 msgid "Show dock in full screen mode"
-msgstr "Dock tijdens volledig scherm weergeven"
+msgstr "Dock im Vollbildmodus anzeigen"
 
 #: prefs.js:37
 msgid "Dock background opacity (%)"
-msgstr "Ondoorzichtigheid van dock-achtergrond (%)"
+msgstr "Deckkraft des Dock-Hintergrunds (%)"
 
 #: prefs.js:40
 msgid "Dock icons opacity (%)"
-msgstr "Ondoorzichtigheid van dock-pictogrammen (%)"
+msgstr "Deckkraft der Dock-Symbole (%)"
 
 #: prefs.js:43
 msgid "Delay for dock autohide (ms)"
-msgstr "Vertraging voor verbergen van dock (ms)"
+msgstr "Verzögerung für das automatische Ausblenden des Docks (ms)"
 
 #: prefs.js:46
 msgid "Delay for dock showing (ms)"
-msgstr "Vertraging voor tonen van dock (ms)"
+msgstr "Verzögerung für das Anzeigen des Docks (ms)"
 
 #: prefs.js:49
 msgid "Duration of dock showing animation (ms)"
-msgstr "Lengte van toonanimatie van dock (ms)"
+msgstr "Dauer der Animation zum Einblenden des Docks (ms)"
 
 #: prefs.js:52
 msgid "Duration of dock hiding animation (ms)"
-msgstr "Lengte van verberganimatie van dock (ms)"
+msgstr "Dauer der Animation zum Ausblenden des Docks (ms)"

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: dock-from-dash\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-05-14 10:45+0200\n"
+"POT-Creation-Date: 2023-04-17 15:48+0000\n"
 "PO-Revision-Date: 2022-04-01 10:45+0200\n"
 "Last-Translator: K0rtus\n"
 "Language-Team: K0rtus\n"
@@ -20,39 +20,45 @@ msgstr ""
 "X-Generator: Gtranslator 41.0\n"
 
 #: prefs.js:28
+msgid "Show overview at startup"
+msgstr ""
+
+#: prefs.js:31
 msgid "Always show the dock"
 msgstr "Всегда показывать док-бар"
 
-#: prefs.js:31
+#: prefs.js:34
 msgid "Show dock in full screen mode"
 msgstr "Показывать док-бар в полноэкранном режиме"
 
-#: prefs.js:34
+#: prefs.js:37
 msgid "Dock background opacity (%)"
 msgstr "Непрозрачность фона док-бара (%)"
 
-#: prefs.js:37
+#: prefs.js:40
 msgid "Dock icons opacity (%)"
 msgstr "Непрозрачность значков док-бара (%)"
 
-#: prefs.js:40
+#: prefs.js:43
 msgid "Delay for dock autohide (ms)"
 msgstr "Задержка автоматического скрытия док-бара (мс)"
 
-#: prefs.js:43
+#: prefs.js:46
 msgid "Delay for dock showing (ms)"
 msgstr "Задержка показа док-бара (мс)"
 
-#: prefs.js:46
+#: prefs.js:49
 msgid "Duration of dock showing animation (ms)"
 msgstr "Продолжительность анимации показа док-бара (мс)"
 
-#: prefs.js:49
+#: prefs.js:52
 msgid "Duration of dock hiding animation (ms)"
 msgstr "Продолжительность анимации скрытия док-бара (мс)"
 
 #~ msgid "Do not auto hide the dock: screen bottom hover to toggle"
-#~ msgstr "Не скрывать док-бар автоматически: наведите курсор на нижнюю часть экрана, чтобы переключить"
+#~ msgstr ""
+#~ "Не скрывать док-бар автоматически: наведите курсор на нижнюю часть "
+#~ "экрана, чтобы переключить"
 
 #~ msgid "Keep the dock always visible"
 #~ msgstr "Держать док-бар всегда видимым"

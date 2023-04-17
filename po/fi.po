@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: dock-from-dash\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-04-01 15:09+0200\n"
+"POT-Creation-Date: 2023-04-17 15:48+0000\n"
 "PO-Revision-Date: 2022-09-11 08:42+0300\n"
 "Last-Translator: Aki <dev.ackky200r@gmail.com>\n"
 "Language-Team: Finnish <none>\n"
@@ -20,34 +20,38 @@ msgstr ""
 "X-Generator: Gtranslator 40.0\n"
 
 #: prefs.js:28
+msgid "Show overview at startup"
+msgstr ""
+
+#: prefs.js:31
 msgid "Always show the dock"
 msgstr "Näytä telakka aina"
 
-#: prefs.js:31
+#: prefs.js:34
 msgid "Show dock in full screen mode"
 msgstr "Näytä telakka koko näytön tilassa"
 
-#: prefs.js:34
+#: prefs.js:37
 msgid "Dock background opacity (%)"
 msgstr "Telakan taustan peittävyys (%)"
 
-#: prefs.js:37
+#: prefs.js:40
 msgid "Dock icons opacity (%)"
 msgstr "Telakan kuvakkeiden peittävyys (%)"
 
-#: prefs.js:40
+#: prefs.js:43
 msgid "Delay for dock autohide (ms)"
 msgstr "Telakan automaattisen piilotuksen viive (ms)"
 
-#: prefs.js:43
+#: prefs.js:46
 msgid "Delay for dock showing (ms)"
 msgstr "Telakan automaattisen ilmestymisen viive (ms)"
 
-#: prefs.js:46
+#: prefs.js:49
 msgid "Duration of dock showing animation (ms)"
 msgstr "Telakan ilmestymisen animoinnin kesto (ms)"
 
-#: prefs.js:49
+#: prefs.js:52
 msgid "Duration of dock hiding animation (ms)"
 msgstr "Telakan piilotuksen animoinnin kesto (ms)"
 
