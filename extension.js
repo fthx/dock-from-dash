@@ -299,7 +299,7 @@ export default class DockFromDashExtension {
             } else {
                 let app_windows = this.app
                     .get_windows()
-                    .filter(window => !window.is_override_redirect() && !window.is_attached_dialog())
+                    .filter(window => !window.is_override_redirect() && !window.is_attached_dialog() && window.located_on_workspace(global.workspace_manager.get_active_workspace()))
                     .sort((w1, w2) => w1.get_id() - w2.get_id());
 
                 switch (app_windows.length) {
