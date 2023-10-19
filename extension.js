@@ -141,13 +141,16 @@ const Dock = GObject.registerClass(
 class Dock extends Dash.Dash {
     _init() {
         super._init();
+
         Main.layoutManager.addTopChrome(this);
+
         this.showAppsButton.set_toggle_mode(false);
         this._dashContainer.set_track_hover(true);
         this._dashContainer.set_reactive(true);
         this.show();
         this._dock_animated = false;
         this._keep_dock_shown = false;
+        this._dragging;
     }
 
     _itemMenuStateChanged(item, opened) {
@@ -201,6 +204,10 @@ class Dock extends Dash.Dash {
         }
 
         if (!this.work_area) {
+            return;
+        }
+
+        if (this._dragging) {
             return;
         }
 
@@ -386,6 +393,9 @@ export default class DockFromDashExtension {
         this._dock._dashContainer.connect('notify::hover', this._dock._on_dock_hover.bind(this._dock));
         this._dock._dashContainer.connect('scroll-event', this._dock._on_dock_scroll.bind(this._dock));
         this._dock.showAppsButton.connect('button-release-event', () => Main.overview.showApps());
+
+        this._item_drag_begin = Main.overview.connect('item-drag-begin', () => {this._dock._dragging = true;});
+        this._item_drag_end = Main.overview.connect('item-drag-end', () => {this._dock._dragging = false;});
 
         this._overview_shown = Main.overview.connect('shown', this._on_overview_shown.bind(this));
 
