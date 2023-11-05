@@ -30,9 +30,6 @@ const SHOW_OVERVIEW_AT_STARTUP = false;
 // Bottom edge settings
 const HOT_EDGE_PRESSURE_TIMEOUT = 1000; // ms
 const PRESSURE_TRESHOLD = 150;
-const FALLBACK_TIMEOUT = 250; // ms
-const SUPPRESS_ACTIVATION_WHEN_BUTTON_HELD = true;
-const SUPPRESS_ACTIVATION_WHEN_FULLSCREEN = true;
 
 
 const BottomDock = GObject.registerClass({
@@ -44,12 +41,7 @@ const BottomDock = GObject.registerClass({
         this._monitor = monitor;
         this._x = x;
         this._y = y;
-        this._fallback_timeout = FALLBACK_TIMEOUT;
-        this._suppress_activation_when_button_held = SUPPRESS_ACTIVATION_WHEN_BUTTON_HELD;
-        this._suppress_activation_when_fullscreen = SUPPRESS_ACTIVATION_WHEN_FULLSCREEN;
         this._pressure_threshold = PRESSURE_TRESHOLD;
-
-        this._setup_fallback_edge_if_needed(layoutManager);
 
         this._pressure_barrier = new Layout.PressureBarrier(this._pressure_threshold,
                                                     HOT_EDGE_PRESSURE_TIMEOUT,
@@ -78,62 +70,17 @@ const BottomDock = GObject.registerClass({
         }
     }
 
-    _setup_fallback_edge_if_needed(layoutManager) {
-        if (!global.display.supports_extended_barriers()) {
-            let size = this._monitor.width;
-            let x_offset = this._monitor.width / 2;
-
-            this.set({
-                name: 'hot-edge',
-                x: this._x + x_offset,
-                y: this._y - 1,
-                width: size,
-                height: 1,
-                reactive: true,
-                _timeout_id: null
-            });
-            layoutManager.addChrome(this);
-        }
-    }
-
     _on_destroy() {
         this.setBarrierSize(0);
+
         this._pressure_barrier.destroy();
         this._pressure_barrier = null;
-        GLib.Source.remove(this._timeout_id);
-        this._timeout_id = null;
     }
 
     _toggle_dock() {
-        if (this._suppress_activation_when_button_held && (global.get_pointer()[2] & Clutter.ModifierType.BUTTON1_MASK)) {
-            return;
-        }
-
-        if (this._suppress_activation_when_fullscreen && this._monitor.inFullscreen && !Main.overview.visible) {
-            return;
-        }
-
         if (Main.overview.shouldToggleByCornerOrButton()) {
             this.emit('toggle-dash');
         }
-    }
-
-    vfunc_enter_event(crossingEvent) {
-        if (!this._timeout_id) {
-            this._timeout_id = GLib.timeout_add(GLib.PRIORITY_HIGH, this._fallback_timeout, () => {
-                this._toggle_dock();
-                return GLib.SOURCE_REMOVE;
-            });
-        }
-        return Clutter.EVENT_PROPAGATE;
-    }
-
-    vfunc_leave_event(crossingEvent) {
-        if (this._timeout_id) {
-            GLib.Source.remove(this._timeout_id);
-            this._timeout_id = null;
-        }
-        return Clutter.EVENT_PROPAGATE;
     }
 });
 
@@ -148,6 +95,7 @@ class Dock extends Dash.Dash {
         this._dashContainer.set_track_hover(true);
         this._dashContainer.set_reactive(true);
         this.show();
+
         this._dock_animated = false;
         this._keep_dock_shown = false;
         this._dragging;
@@ -171,6 +119,9 @@ class Dock extends Dash.Dash {
         }
 
         this._on_dock_hover();
+    }
+
+    _queueRedisplay() {
     }
 
     _on_dock_scroll(origin, event) {
@@ -199,15 +150,7 @@ class Dock extends Dash.Dash {
     }
 
     _hide_dock() {
-        if (this._dock_animated) {
-            return;
-        }
-
-        if (!this.work_area) {
-            return;
-        }
-
-        if (this._dragging) {
+        if (this._dock_animated || !this.work_area || this._dragging) {
             return;
         }
 
@@ -224,11 +167,7 @@ class Dock extends Dash.Dash {
     }
 
     _show_dock() {
-        if (this._dock_animated) {
-            return;
-        }
-
-        if (!this.work_area) {
+        if (this._dock_animated || !this.work_area) {
             return;
         }
 
@@ -381,23 +320,19 @@ export default class DockFromDashExtension {
         }
     }
 
-    _on_overview_shown() {
-        this._dock.hide();
-    }
-
     _create_dock() {
         this._dock = new Dock();
 
         this._dock_refresh();
 
-        this._dock._dashContainer.connect('notify::hover', this._dock._on_dock_hover.bind(this._dock));
-        this._dock._dashContainer.connect('scroll-event', this._dock._on_dock_scroll.bind(this._dock));
-        this._dock.showAppsButton.connect('button-release-event', () => Main.overview.showApps());
+        this._dock._dashContainer.connectObject('notify::hover', this._dock._on_dock_hover.bind(this._dock), this._dock);
+        this._dock._dashContainer.connectObject('scroll-event', this._dock._on_dock_scroll.bind(this._dock), this._dock);
+        this._dock.showAppsButton.connectObject('button-release-event', () => Main.overview.showApps(), this._dock);
 
         this._item_drag_begin = Main.overview.connect('item-drag-begin', () => {this._dock._dragging = true;});
         this._item_drag_end = Main.overview.connect('item-drag-end', () => {this._dock._dragging = false;});
 
-        this._overview_shown = Main.overview.connect('shown', this._on_overview_shown.bind(this));
+        this._overview_shown = Main.overview.connect('shown', () => this._dock.hide());
 
         this._workareas_changed = global.display.connect_after('workareas-changed', this._dock_refresh.bind(this));
     }
@@ -409,7 +344,7 @@ export default class DockFromDashExtension {
         this._edge_handler_id = Main.layoutManager.connect('hot-corners-changed', this._update_hot_edges.bind(this));
         Main.layoutManager._updateHotCorners();
 
-        this.startup_complete = Main.layoutManager.connect('startup-complete', () => {
+        this._startup_complete = Main.layoutManager.connect('startup-complete', () => {
             if (!SHOW_OVERVIEW_AT_STARTUP) {
                 Main.overview.hide();
             }
@@ -430,12 +365,11 @@ export default class DockFromDashExtension {
             global.display.disconnect(this._workareas_changed);
             this._workareas_changed = null;
         }
-        if (this.startup_complete) {
-            Main.layoutManager.disconnect(this.startup_complete);
+        if (this._startup_complete) {
+            Main.layoutManager.disconnect(this._startup_complete);
         }
 
         Main.layoutManager.removeChrome(this._dock);
-        this._dock._box.destroy();
         this._dock.destroy();
 
         Main.layoutManager.disconnect(this._edge_handler_id);
