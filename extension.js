@@ -1,6 +1,6 @@
 /*
     Dock from Dash - GNOME Shell 45+ extension
-    Copyright Francois Thirioux 2023
+    Copyright Francois Thirioux 2024
     GitHub contributors: @fthx, @rastersoft, @underlinejakez, @lucaxvi, @subpop
     Some ideas picked from GNOME Shell native code
     Bottom edge code adapted from @jdoda's Hot Edge extension
@@ -23,7 +23,7 @@ import * as AppDisplay from 'resource:///org/gnome/shell/ui/appDisplay.js';
 // Dock settings
 const DASH_MAX_HEIGHT_RATIO = 15; // %
 const AUTO_HIDE_DELAY = 300; // ms
-const SHOWING_ANIMATION_DURATION = 100; // ms
+const SHOWING_ANIMATION_DURATION = 200; // ms
 const HIDING_ANIMATION_DURATION = 200; // ms
 const SHOW_OVERVIEW_AT_STARTUP = false;
 
@@ -62,7 +62,7 @@ const BottomDock = GObject.registerClass({
         if (size > 0) {
             size = this._monitor.width;
             let x_offset = (this._monitor.width - size) / 2;
-            this._barrier = new Meta.Barrier({display: global.display,
+            this._barrier = new Meta.Barrier({backend: global.backend,
                                                 x1: this._x + x_offset, x2: this._x + x_offset + size,
                                                 y1: this._y, y2: this._y,
                                                 directions: Meta.BarrierDirection.NEGATIVE_Y});
@@ -121,9 +121,6 @@ class Dock extends Dash.Dash {
         this._on_dock_hover();
     }
 
-    _queueRedisplay() {
-    }
-
     _on_dock_scroll(origin, event) {
         this._active_workspace = global.workspace_manager.get_active_workspace();
         switch(event.get_scroll_direction()) {
@@ -144,6 +141,17 @@ class Dock extends Dash.Dash {
                 if (!this._dashContainer.get_hover()) {
                     this._hide_dock();
                     this._auto_hide_dock_timeout = 0;
+                }
+            });
+        }
+    }
+
+    _ensure_auto_hide_dock() {
+        if (!this._dashContainer.get_hover() && !this._keep_dock_shown) {
+            this._ensure_auto_hide_dock_timeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 3 * AUTO_HIDE_DELAY, () => {
+                if (!this._dashContainer.get_hover() && (this._auto_hide_dock_timeout == 0)) {
+                    this._hide_dock();
+                    this._ensure_auto_hide_dock_timeout = 0;
                 }
             });
         }
@@ -213,6 +221,7 @@ export default class DockFromDashExtension {
             if (haveBottom) {
                 let edge = new BottomDock(Main.layoutManager, monitor, leftX, bottomY);
                 edge.connect('toggle-dash', this._toggle_dock.bind(this));
+                edge.connect('toggle-dash', this._dock._ensure_auto_hide_dock.bind(this._dock));
                 edge.setBarrierSize(size);
                 Main.layoutManager.hotCorners.push(edge);
             } else {
@@ -369,8 +378,12 @@ export default class DockFromDashExtension {
             Main.layoutManager.disconnect(this._startup_complete);
         }
 
+        this._dock._show_dock();
         Main.layoutManager.removeChrome(this._dock);
+        this._dock._box.destroy();
+        this._dock._box = null;
         this._dock.destroy();
+        this._dock = null;
 
         Main.layoutManager.disconnect(this._edge_handler_id);
         Main.layoutManager._updateHotCorners();

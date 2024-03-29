@@ -3,7 +3,7 @@
   "description": "Dock.\n\n New version and no prefs for 45+ (maybe coming soon).\n\n Does use native GNOME Shell Dash. Very light extension.\n\n Hover the bottom of your screen and GNOME Shell dash will appear without overview and will hide when you leave the dash. Native GNOME Shell click behavior is modified: minimize if one window is open, overview if many windows are open. Scroll on the dock to change workspace. Some preferences in UI (thanks @rastersoft).\n\n I'm not notified of messages here, please report bugs only through GitHub.",
   "name": "Dock from Dash",
   "shell-version": [
-    "45"
+    "46"
   ],
   "url": "https://github.com/fthx/dock-from-dash",
   "uuid": "dock-from-dash@fthx",
