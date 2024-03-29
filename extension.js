@@ -334,58 +334,52 @@ export default class DockFromDashExtension {
 
         this._dock_refresh();
 
-        this._dock._dashContainer.connectObject('notify::hover', this._dock._on_dock_hover.bind(this._dock), this._dock);
-        this._dock._dashContainer.connectObject('scroll-event', this._dock._on_dock_scroll.bind(this._dock), this._dock);
-        this._dock.showAppsButton.connectObject('button-release-event', () => Main.overview.showApps(), this._dock);
+        this._dock._dashContainer.connectObject('notify::hover', this._dock._on_dock_hover.bind(this._dock), this);
+        this._dock._dashContainer.connectObject('scroll-event', this._dock._on_dock_scroll.bind(this._dock), this);
+        this._dock.showAppsButton.connectObject('button-release-event', () => Main.overview.showApps(), this);
 
-        this._item_drag_begin = Main.overview.connect('item-drag-begin', () => {this._dock._dragging = true;});
-        this._item_drag_end = Main.overview.connect('item-drag-end', () => {this._dock._dragging = false;});
+        Main.overview.connectObject('item-drag-begin', () => {this._dock._dragging = true;}, this);
+        Main.overview.connectObject('item-drag-end', () => {this._dock._dragging = false;}, this);
 
-        this._overview_shown = Main.overview.connect('shown', () => this._dock.hide());
+        Main.overview.connectObject('shown', () => this._dock.hide(), this);
 
-        this._workareas_changed = global.display.connect_after('workareas-changed', this._dock_refresh.bind(this));
+        global.display.connectObject('workareas-changed', this._dock_refresh.bind(this), this);
     }
 
     enable() {
         this._modify_native_click_behavior();
         this._create_dock();
 
-        this._edge_handler_id = Main.layoutManager.connect('hot-corners-changed', this._update_hot_edges.bind(this));
+        Main.layoutManager.connectObject('hot-corners-changed', this._update_hot_edges.bind(this), this);
         Main.layoutManager._updateHotCorners();
 
-        this._startup_complete = Main.layoutManager.connect('startup-complete', () => {
-            if (!SHOW_OVERVIEW_AT_STARTUP) {
-                Main.overview.hide();
-            }
-        });
+        Main.layoutManager.connectObject('startup-complete', () => {
+                if (!SHOW_OVERVIEW_AT_STARTUP) {
+                    Main.overview.hide();
+                }
+            },
+            this);
     }
 
     disable() {
         AppDisplay.AppIcon.prototype.activate = this.original_click_function;
 
-        if (this._overview_shown) {
-            Main.overview.disconnect(this._overview_shown);
-        }
+        Main.overview.disconnectObject(this);
+        this._dock._dashContainer.disconnectObject(this);
+        this._dock.showAppsButton.disconnectObject(this);
+        global.display.disconnectObject(this);
+        Main.layoutManager.disconnectObject(this);
+
         if (this._dock._auto_hide_dock_timeout) {
             GLib.source_remove(this._dock._auto_hide_dock_timeout);
             this._dock._auto_hide_dock_timeout = 0;
         }
-        if (this._workareas_changed) {
-            global.display.disconnect(this._workareas_changed);
-            this._workareas_changed = null;
-        }
-        if (this._startup_complete) {
-            Main.layoutManager.disconnect(this._startup_complete);
-        }
 
         this._dock._show_dock();
-        Main.layoutManager.removeChrome(this._dock);
-        this._dock._box.destroy();
-        this._dock._box = null;
+
         this._dock.destroy();
         this._dock = null;
 
-        Main.layoutManager.disconnect(this._edge_handler_id);
         Main.layoutManager._updateHotCorners();
     }
 }
