@@ -267,20 +267,25 @@ export default class DockFromDashExtension {
                         }
                     break;
                     default:
-                        let app_has_focus = false;
-                        let app_focused_window_index = 0;
-                        for (var index = 0; index < app_windows.length; index++) {
-                            if (app_windows[index].has_focus()) {
-                                app_has_focus = true;
-                                app_focused_window_index = index;
-                            }
-                        }
-
-                        if (app_has_focus) {
-                            let next_index = (app_focused_window_index + 1) % app_windows.length;
-                            this.app.activate_window(app_windows[next_index], global.get_current_time());
-                        } else {
+                        if (Main.overview.visible) {
                             this.app.activate();
+                            Main.overview.hide();
+                        } else {
+                            let app_has_focus = false;
+                            let app_focused_window_index = 0;
+                            for (var index = 0; index < app_windows.length; index++) {
+                                if (app_windows[index].has_focus()) {
+                                    app_has_focus = true;
+                                    app_focused_window_index = index;
+                                }
+                            }
+
+                            if (app_has_focus) {
+                                let next_index = (app_focused_window_index + 1) % app_windows.length;
+                                this.app.activate_window(app_windows[next_index], global.get_current_time());
+                            } else {
+                                this.app.activate();
+                            }
                         }
                 }
             }
