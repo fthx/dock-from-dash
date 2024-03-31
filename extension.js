@@ -23,8 +23,8 @@ import * as AppDisplay from 'resource:///org/gnome/shell/ui/appDisplay.js';
 // Dock settings
 const DASH_MAX_HEIGHT_RATIO = 15; // %
 const AUTO_HIDE_DELAY = 300; // ms
-const SHOWING_ANIMATION_DURATION = 200; // ms
-const HIDING_ANIMATION_DURATION = 200; // ms
+const SHOWING_ANIMATION_DURATION = 150; // ms
+const HIDING_ANIMATION_DURATION = 150; // ms
 const SHOW_OVERVIEW_AT_STARTUP = false;
 
 // Bottom edge settings
@@ -75,6 +75,8 @@ const BottomDock = GObject.registerClass({
 
         this._pressure_barrier.destroy();
         this._pressure_barrier = null;
+
+        super.destroy();
     }
 
     _toggle_dock() {
@@ -99,6 +101,18 @@ class Dock extends Dash.Dash {
         this._dock_animated = false;
         this._keep_dock_shown = false;
         this._dragging;
+
+        this._dashContainer.connectObject('notify::hover', this._on_dock_hover.bind(this), this);
+        this._dashContainer.connectObject('scroll-event', this._on_dock_scroll.bind(this), this);
+        this.showAppsButton.connectObject('button-release-event', () => Main.overview.showApps(), this);
+
+        Main.overview.connectObject('item-drag-begin', () => {this._dragging = true;}, this);
+        Main.overview.connectObject('item-drag-end', () => {this._dragging = false;}, this);
+        global.display.connectObject('workareas-changed', this._dock_refresh.bind(this), this);
+
+        Main.overview.connectObject('shown', () => this.hide(), this);
+
+        this._dock_refresh();
     }
 
     _itemMenuStateChanged(item, opened) {
@@ -119,6 +133,12 @@ class Dock extends Dash.Dash {
         }
 
         this._on_dock_hover();
+    }
+
+    _queueRedisplay() {
+        if (this._workId) {
+            Main.queueDeferredWork(this._workId);
+        }
     }
 
     _on_dock_scroll(origin, event) {
@@ -190,6 +210,70 @@ class Dock extends Dash.Dash {
             },
         });
     }
+
+    _toggle_dock() {
+        if (Main.overview.visible) {
+            return;
+        }
+
+        if (this.is_visible()) {
+            this._hide_dock();
+        } else {
+            this._show_dock();
+        }
+    }
+
+    _dock_refresh() {
+        if (this._dock_refreshing) {
+            return;
+        }
+        this._dock_refreshing = true;
+
+        this.work_area = Main.layoutManager.getWorkAreaForMonitor(Main.layoutManager.primaryIndex);
+        if (!this.work_area) {
+            return;
+        }
+
+        this.max_dock_height = Math.round(this.work_area.height * DASH_MAX_HEIGHT_RATIO / 100);
+        this.set_width(this.work_area.width);
+        this.set_height(Math.min(this.get_preferred_height(this.work_area.width), this.max_dock_height));
+        this.setMaxSize(this.width, this.max_dock_height);
+
+        if (this.is_visible()) {
+            this.set_position(this.work_area.x, this.work_area.y + this.work_area.height - this.height);
+        } else {
+            this.set_position(this.work_area.x, this.work_area.y + this.work_area.height);
+        }
+
+        this.show();
+        if (!this._dashContainer.get_hover()) {
+            this._hide_dock();
+        }
+
+        this._dock_refreshing = false;
+    }
+
+    _destroy() {
+        Main.overview.disconnectObject(this);
+        this._dashContainer.disconnectObject(this);
+        this.showAppsButton.disconnectObject(this);
+        global.display.disconnectObject(this);
+
+        if (this._auto_hide_dock_timeout) {
+            GLib.source_remove(this._auto_hide_dock_timeout);
+            this._auto_hide_dock_timeout = 0;
+        }
+
+        if (this._ensure_auto_hide_dock_timeout) {
+            GLib.source_remove(this._ensure_auto_hide_dock_timeout);
+            this._ensure_auto_hide_dock = 0;
+        }
+
+        this._show_dock();
+
+        this._workId = null;
+        super.destroy();
+    }
 });
 
 export default class DockFromDashExtension {
@@ -220,8 +304,8 @@ export default class DockFromDashExtension {
 
             if (haveBottom) {
                 let edge = new BottomDock(Main.layoutManager, monitor, leftX, bottomY);
-                edge.connect('toggle-dash', this._toggle_dock.bind(this));
-                edge.connect('toggle-dash', this._dock._ensure_auto_hide_dock.bind(this._dock));
+                edge.connectObject('toggle-dash', () => this._dock._toggle_dock(), this);
+                edge.connectObject('toggle-dash', () => this._dock._ensure_auto_hide_dock(), this);
                 edge.setBarrierSize(size);
                 Main.layoutManager.hotCorners.push(edge);
             } else {
@@ -292,68 +376,10 @@ export default class DockFromDashExtension {
         }
     }
 
-    _dock_refresh() {
-        if (this._dock_refreshing) {
-            return;
-        }
-        this._dock_refreshing = true;
-
-        this._dock.work_area = Main.layoutManager.getWorkAreaForMonitor(Main.layoutManager.primaryIndex);
-        if (!this._dock.work_area) {
-            return;
-        }
-
-        this._dock.max_dock_height = Math.round(this._dock.work_area.height * DASH_MAX_HEIGHT_RATIO / 100);
-        this._dock.set_width(this._dock.work_area.width);
-        this._dock.set_height(Math.min(this._dock.get_preferred_height(this._dock.work_area.width), this._dock.max_dock_height));
-        this._dock.setMaxSize(this._dock.width, this._dock.max_dock_height);
-
-        if (this._dock.is_visible()) {
-            this._dock.set_position(this._dock.work_area.x, this._dock.work_area.y + this._dock.work_area.height - this._dock.height);
-        } else {
-            this._dock.set_position(this._dock.work_area.x, this._dock.work_area.y + this._dock.work_area.height);
-        }
-
-        this._dock.show();
-        if (!this._dock._dashContainer.get_hover()) {
-            this._dock._hide_dock();
-        }
-
-        this._dock_refreshing = false;
-    }
-
-    _toggle_dock() {
-        if (Main.overview.visible) {
-            return;
-        }
-
-        if (this._dock.is_visible()) {
-            this._dock._hide_dock();
-        } else {
-            this._dock._show_dock();
-        }
-    }
-
-    _create_dock() {
-        this._dock = new Dock();
-
-        this._dock_refresh();
-
-        this._dock._dashContainer.connectObject('notify::hover', this._dock._on_dock_hover.bind(this._dock), this);
-        this._dock._dashContainer.connectObject('scroll-event', this._dock._on_dock_scroll.bind(this._dock), this);
-        this._dock.showAppsButton.connectObject('button-release-event', () => Main.overview.showApps(), this);
-
-        Main.overview.connectObject('item-drag-begin', () => {this._dock._dragging = true;}, this);
-        Main.overview.connectObject('item-drag-end', () => {this._dock._dragging = false;}, this);
-
-        Main.overview.connectObject('shown', () => this._dock.hide(), this);
-
-        global.display.connectObject('workareas-changed', this._dock_refresh.bind(this), this);
-    }
-
     enable() {
         this._modify_native_click_behavior();
-        this._create_dock();
+
+        this._dock = new Dock();
 
         Main.layoutManager.connectObject('hot-corners-changed', this._update_hot_edges.bind(this), this);
         Main.layoutManager._updateHotCorners();
@@ -369,20 +395,9 @@ export default class DockFromDashExtension {
     disable() {
         AppDisplay.AppIcon.prototype.activate = this.original_click_function;
 
-        Main.overview.disconnectObject(this);
-        this._dock._dashContainer.disconnectObject(this);
-        this._dock.showAppsButton.disconnectObject(this);
-        global.display.disconnectObject(this);
         Main.layoutManager.disconnectObject(this);
 
-        if (this._dock._auto_hide_dock_timeout) {
-            GLib.source_remove(this._dock._auto_hide_dock_timeout);
-            this._dock._auto_hide_dock_timeout = 0;
-        }
-
-        this._dock._show_dock();
-
-        this._dock.destroy();
+        this._dock._destroy();
         this._dock = null;
 
         Main.layoutManager._updateHotCorners();
