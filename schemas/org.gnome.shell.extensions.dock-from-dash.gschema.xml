@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<schemalist gettext-domain="dock-from-dash">
+    <schema path="/org/gnome/shell/extensions/dock-from-dash/" id="org.gnome.shell.extensions.dock-from-dash">
+
+    <key type="b" name="always-show">
+        <default>false</default>
+        <summary>Always show the dock</summary>
+        <description>Keep the dock always visible.</description>
+    </key>
+
+    <key type="b" name="show-in-full-screen">
+        <default>false</default>
+        <summary>Show dock in full screen</summary>
+        <description>Show the dock while in full screen mode.</description>
+    </key>
+
+    <key type="i" name="background-opacity">
+        <default>90</default>
+        <summary>Dock background opacity</summary>
+        <description>Opacity, in %, of the dock background, 0 = translucent 100 = solid.</description>
+    </key>
+
+    <key type="i" name="icons-opacity">
+        <default>100</default>
+        <summary>Dock icons opacity</summary>
+        <description>Opacity, in %, of the dock icons, 0 = translucent 100 = solid.</description>
+    </key>
+
+    <key type="i" name="autohide-delay">
+        <default>300</default>
+        <summary>Dock autohide timeout</summary>
+        <description>Delay, in milliseconds, before the dock hides after the cursor abandons it.</description>
+    </key>
+
+    <key type="i" name="toggle-delay">
+        <default>150</default>
+        <summary>Dock toggle delay</summary>
+        <description>Delay, in milliseconds, before the dock shows after the cursor reaches the bottom of the screen.</description>
+    </key>
+
+    <key type="i" name="show-dock-duration">
+        <default>100</default>
+        <summary>Show dock animation duration</summary>
+        <description>Duration, in milliseconds, of dock showing animation.</description>
+    </key>
+
+    <key type="i" name="hide-dock-duration">
+        <default>200</default>
+        <summary>Hide dock animation duration</summary>
+        <description>Duration, in milliseconds, of dock hiding animation.</description>
+    </key>
+
+    <key type="b" name="show-overview">
+        <default>false</default>
+        <summary>Show overview at startup</summary>
+        <description>Show the overview at startup.</description>
+    </key>
+
+    </schema>
+</schemalist>
