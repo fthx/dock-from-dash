@@ -97,8 +97,8 @@ const BottomDock = GObject.registerClass({
 const Dock = GObject.registerClass(
 class Dock extends Dash.Dash {
     _init(settings) {
+        super._init();        
         this._settings = settings;
-        super._init();
 
         Main.layoutManager.addTopChrome(this);
 
@@ -336,9 +336,11 @@ class Dock extends Dash.Dash {
 });
 
 export default class DockFromDashExtension extends Extension {
-    constructor() {
-        this._edge_handler_id = null;
-    }
+    _edge_handler_id = null;
+    // constructor() {
+    //     super();
+    //     this._edge_handler_id = null;
+    // }
 
     _update_hot_edges() {
         for (let i = 0; i < Main.layoutManager.monitors.length; i++) {
