@@ -2,10 +2,10 @@ import Gio from 'gi://Gio';
 import Adw from 'gi://Adw';
 import Gtk from 'gi://Gtk';
 
-import {ExtensionPreferences, gettext as _} from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
+import { ExtensionPreferences, gettext as _ } from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
 
-class SwitchRow{
-    constructor(prefs,setting,title,subtitle) {
+class SwitchRow {
+    constructor(prefs, setting, title, subtitle) {
         const NewRow = new Adw.SwitchRow({
             title,
             subtitle
@@ -20,23 +20,20 @@ class SwitchRow{
     }
 }
 
-class SpinRow{
-    constructor(prefs,setting,title,subtitle,lower,upper,step_increment) {
+class SpinRow {
+    constructor(prefs, setting, title, subtitle, lower, upper, step_increment) {
         const adjustment = new Gtk.Adjustment({
-            lower, 
-            upper, 
-            value: prefs.get_int(setting), 
+            lower,
+            upper,
+            value: prefs.get_int(setting),
             step_increment
         })
         const NewRow = new Adw.SpinRow({
             adjustment,
-            // digits: 2,
             title,
             subtitle
-        }    
-
+        }
         )
-        // NewRow.set_value(prefs.get_double(setting))
         prefs.bind(
             setting,
             NewRow,
@@ -51,47 +48,17 @@ export default class DockFromDashExtensionPrefs extends ExtensionPreferences {
     fillPreferencesWindow(window) {
         window._settings = this.getSettings('org.gnome.shell.extensions.dock-from-dash');
 
-        // Create a preferences page, with a single group
         const page = new Adw.PreferencesPage({
             title: _('General'),
             icon_name: 'dialog-information-symbolic',
         });
         window.add(page);
 
-
-        // const AppearanceGroup = new Adw.PreferencesGroup({
-        //     title: _('Appearance'),
-        //     description: _('Configure the appearance of the extension'),
-        // });
-        // page.add(AppearanceGroup);
-        // AppearanceGroup.add(new SpinRow(
-        //     window._settings,
-        //     'background-opacity',
-        //     _('Dock background opacity'),
-        //     _('Opacity, in %, of the dock background, 0 = translucent 100 = solid.'),
-        //     0,
-        //     100,
-        //     1
-        // ));
-
-
         const BehaviorGroup = new Adw.PreferencesGroup({
             title: _('Behavior'),
             description: _('Configure the Behavior of the Dock'),
         });
         page.add(BehaviorGroup);
-        // BehaviorGroup.add(new SwitchRow(
-        //     window._settings,
-        //     'always-show',
-        //     _('Always show the dock'),
-        //     _('Keep the dock always visible.')
-        // ));
-        // BehaviorGroup.add(new SwitchRow(
-        //     window._settings,
-        //     'show-in-full-screen',
-        //     _('Show dock in full screen'),
-        //     _('Show the dock while in full screen mode.')
-        // ));
         BehaviorGroup.add(new SpinRow(
             window._settings,
             'autohide-delay',
@@ -134,7 +101,5 @@ export default class DockFromDashExtensionPrefs extends ExtensionPreferences {
             _('Show overview at startup'),
             _('Show the overview at startup.')
         ));
-
-
     }
 }
