@@ -1,12 +1,11 @@
 /*
     Dock from Dash - GNOME Shell 45+ extension
     Copyright Francois Thirioux 2024
-    GitHub contributors: @fthx, @rastersoft, @underlinejakez, @lucaxvi, @subpop
+    GitHub contributors: @fthx, @rastersoft, @underlinejakez, @lucaxvi, @subpop, @Ned-Tom
     Some ideas picked from GNOME Shell native code
     Bottom edge code adapted from @jdoda's Hot Edge extension
     License GPL v3
 */
-
 import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
 
 import Clutter from 'gi://Clutter';
@@ -20,18 +19,10 @@ import * as Layout from 'resource:///org/gnome/shell/ui/layout.js'
 import * as Dash from 'resource:///org/gnome/shell/ui/dash.js';
 import * as AppDisplay from 'resource:///org/gnome/shell/ui/appDisplay.js';
 
-
 // Dock settings
 const DASH_MAX_HEIGHT_RATIO = 15; // %
-// const AUTO_HIDE_DELAY = 300; // ms // autohide-delay
-// const SHOWING_ANIMATION_DURATION = 150; // ms // show-dock-duration
-// const HIDING_ANIMATION_DURATION = 150; // ms // hide-dock-duration
-// const SHOW_OVERVIEW_AT_STARTUP = false; // show-overview
-
 // Bottom edge settings
-// const HOT_EDGE_PRESSURE_TIMEOUT = 1000; // ms // toggle-delay
 const PRESSURE_TRESHOLD = 150;
-
 
 const BottomDock = GObject.registerClass({
     Signals: {'toggle-dash': {}},
@@ -39,12 +30,10 @@ const BottomDock = GObject.registerClass({
     _init(settings,layoutManager, monitor, x, y) {
         super._init();
         this._settings = settings;
-
         this._monitor = monitor;
         this._x = x;
         this._y = y;
         this._pressure_threshold = PRESSURE_TRESHOLD;
-
         this._pressure_barrier = new Layout.PressureBarrier(
             this._pressure_threshold,
             this._settings.get_int('toggle-delay'),
@@ -52,17 +41,14 @@ const BottomDock = GObject.registerClass({
             Shell.ActionMode.OVERVIEW
         );
         this._pressure_barrier.connect('trigger', this._toggle_dock.bind(this));
-
         this.connect('destroy', this._on_destroy.bind(this));
     }
-
     setBarrierSize(size) {
         if (this._barrier) {
             this._pressure_barrier.removeBarrier(this._barrier);
             this._barrier.destroy();
             this._barrier = null;
         }
-
         if (size > 0) {
             size = this._monitor.width;
             let x_offset = (this._monitor.width - size) / 2;
@@ -77,36 +63,28 @@ const BottomDock = GObject.registerClass({
             this._pressure_barrier.addBarrier(this._barrier);
         }
     }
-
     _on_destroy() {
         this.setBarrierSize(0);
-
         this._pressure_barrier.destroy();
         this._pressure_barrier = null;
-
         super.destroy();
     }
-
     _toggle_dock() {
         if (Main.overview.shouldToggleByCornerOrButton()) {
             this.emit('toggle-dash');
         }
     }
 });
-
 const Dock = GObject.registerClass(
 class Dock extends Dash.Dash {
     _init(settings) {
         super._init();        
         this._settings = settings;
-
         Main.layoutManager.addTopChrome(this);
-
         this.showAppsButton.set_toggle_mode(false);
         this._dashContainer.set_track_hover(true);
         this._dashContainer.set_reactive(true);
         this.show();
-
         this._dock_animated = false;
         this._keep_dock_shown = false;
         this._dragging;
@@ -126,7 +104,6 @@ class Dock extends Dash.Dash {
             () => Main.overview.showApps(),
             this
         );
-
         Main.overview.connectObject(
             'item-drag-begin',
             () => {this._dragging = true;},
@@ -142,12 +119,9 @@ class Dock extends Dash.Dash {
             this._dock_refresh.bind(this),
             this
         );
-
         Main.overview.connectObject('shown', () => this.hide(), this);
-
         this._dock_refresh();
     }
-
     _itemMenuStateChanged(item, opened) {
         if (opened) {
             if (this._showLabelTimeoutId > 0) {
@@ -164,16 +138,13 @@ class Dock extends Dash.Dash {
                 this._keep_dock_shown = false
             }
         }
-
         this._on_dock_hover();
     }
-
     _queueRedisplay() {
         if (this._workId) {
             Main.queueDeferredWork(this._workId);
         }
     }
-
     _on_dock_scroll(origin, event) {
         this._active_workspace = global.workspace_manager.get_active_workspace();
         switch(event.get_scroll_direction()) {
@@ -191,7 +162,6 @@ class Dock extends Dash.Dash {
                 break;
         }
     }
-
     _on_dock_hover() {
         if (!this._dashContainer.get_hover() && !this._keep_dock_shown) {
             this._auto_hide_dock_timeout = GLib.timeout_add(
@@ -205,7 +175,6 @@ class Dock extends Dash.Dash {
             );
         }
     }
-
     _ensure_auto_hide_dock() {
         if (!this._dashContainer.get_hover() && !this._keep_dock_shown) {
             this._ensure_auto_hide_dock_timeout = GLib.timeout_add(
@@ -223,12 +192,10 @@ class Dock extends Dash.Dash {
             );
         }
     }
-
     _hide_dock() {
         if (this._dock_animated || !this.work_area || this._dragging) {
             return;
         }
-
         this._dock_animated = true;
         this.ease({
             duration: this._settings.get_int('hide-dock-duration'),
@@ -240,12 +207,10 @@ class Dock extends Dash.Dash {
             },
         });
     }
-
     _show_dock() {
         if (this._dock_animated || !this.work_area) {
             return;
         }
-
         this.show();
         this._dock_animated = true;
         this.ease({
@@ -257,32 +222,27 @@ class Dock extends Dash.Dash {
             },
         });
     }
-
     _toggle_dock() {
         if (Main.overview.visible) {
             return;
         }
-
         if (this.is_visible()) {
             this._hide_dock();
         } else {
             this._show_dock();
         }
     }
-
     _dock_refresh() {
         if (this._dock_refreshing) {
             return;
         }
         this._dock_refreshing = true;
-
         this.work_area = Main.layoutManager.getWorkAreaForMonitor(
             Main.layoutManager.primaryIndex
         );
         if (!this.work_area) {
             return;
         }
-
         this.max_dock_height = Math.round(
             this.work_area.height * DASH_MAX_HEIGHT_RATIO / 100
         );
@@ -303,45 +263,32 @@ class Dock extends Dash.Dash {
                 this.work_area.y + this.work_area.height
             );
         }
-
         this.show();
         if (!this._dashContainer.get_hover()) {
             this._hide_dock();
         }
-
         this._dock_refreshing = false;
     }
-
     _destroy() {
         Main.overview.disconnectObject(this);
         this._dashContainer.disconnectObject(this);
         this.showAppsButton.disconnectObject(this);
         global.display.disconnectObject(this);
-
         if (this._auto_hide_dock_timeout) {
             GLib.source_remove(this._auto_hide_dock_timeout);
             this._auto_hide_dock_timeout = 0;
         }
-
         if (this._ensure_auto_hide_dock_timeout) {
             GLib.source_remove(this._ensure_auto_hide_dock_timeout);
             this._ensure_auto_hide_dock = 0;
         }
-
         this._show_dock();
-
         this._workId = null;
         super.destroy();
     }
 });
-
 export default class DockFromDashExtension extends Extension {
     _edge_handler_id = null;
-    // constructor() {
-    //     super();
-    //     this._edge_handler_id = null;
-    // }
-
     _update_hot_edges() {
         for (let i = 0; i < Main.layoutManager.monitors.length; i++) {
             let monitor = Main.layoutManager.monitors[i];
@@ -365,7 +312,6 @@ export default class DockFromDashExtension extends Extension {
                     }
                 }
             }
-
             if (haveBottom) {
                 let edge = new BottomDock(
                     this._settings,
@@ -391,7 +337,6 @@ export default class DockFromDashExtension extends Extension {
             }
         }
     }
-
     _modify_native_click_behavior() {
         this.original_click_function = AppDisplay.AppIcon.prototype.activate;
         AppDisplay.AppIcon.prototype.activate = function(button) {
@@ -453,14 +398,10 @@ export default class DockFromDashExtension extends Extension {
             }
         }
     }
-
     enable() {
         this._settings = this.getSettings('org.gnome.shell.extensions.dock-from-dash');
-
         this._modify_native_click_behavior();
-
         this._dock = new Dock(this._settings);
-
         Main.layoutManager.connectObject('hot-corners-changed', this._update_hot_edges.bind(this), this);
         Main.layoutManager._updateHotCorners();
 
@@ -471,17 +412,12 @@ export default class DockFromDashExtension extends Extension {
         },
         this);
     }
-
     disable() {
         this._settings = null;
-
         AppDisplay.AppIcon.prototype.activate = this.original_click_function;
-
         Main.layoutManager.disconnectObject(this);
-
         this._dock._destroy();
         this._dock = null;
-
         Main.layoutManager._updateHotCorners();
     }
 }
