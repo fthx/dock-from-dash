@@ -114,6 +114,8 @@ class Dock extends Dash.Dash {
 
         Main.overview.connectObject('shown', () => this.hide(), this);
 
+        this.connectObject('destroy', this._destroy.bind(this), this);
+
         this._dock_refresh();
     }
 
@@ -130,7 +132,7 @@ class Dock extends Dash.Dash {
         } else {
             if (item == this._last_appicon_with_menu) {
                 this._last_appicon_with_menu = null;
-                this._keep_dock_shown = false
+                this._keep_dock_shown = false;
             }
         }
 
@@ -261,8 +263,6 @@ export default class DockFromDashExtension {
     }
 
     _update_hot_edges() {
-        Main.layoutManager._destroyHotCorners();
-
         for (let i = 0; i < Main.layoutManager.monitors.length; i++) {
             let monitor = Main.layoutManager.monitors[i];
             let leftX = monitor.x;
@@ -369,8 +369,7 @@ export default class DockFromDashExtension {
         Main.layoutManager.connectObject('startup-complete', () => {
                 if (!SHOW_OVERVIEW_AT_STARTUP)
                     Main.overview.hide();
-            },
-            this);
+            }, this);
     }
 
     disable() {
@@ -378,7 +377,7 @@ export default class DockFromDashExtension {
 
         Main.layoutManager.disconnectObject(this);
 
-        this._dock._destroy();
+        this._dock?.destroy();
         this._dock = null;
 
         Main.layoutManager._updateHotCorners();
